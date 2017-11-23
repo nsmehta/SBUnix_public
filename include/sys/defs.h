@@ -19,4 +19,10 @@ typedef uint64_t off_t;
 
 typedef uint32_t pid_t;
 
+typedef uint64_t pml4;
+typedef uint64_t pdp;
+typedef uint64_t pd;
+typedef uint64_t pt;
+
+
 #endif

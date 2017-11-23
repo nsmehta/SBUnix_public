@@ -11,6 +11,7 @@ extern char kernmem, physbase;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+  initScreen();
   struct smap_t {
     uint64_t base, length;
     uint32_t type;
@@ -22,7 +23,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     }
   }
   kprintf("physfree %p\n", (uint64_t)physfree);
-  kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  kprintf("physbase is : %p\n", (uint64_t)physbase);
+  //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  while(1);
 }
 
 void boot(void)
