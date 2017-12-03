@@ -18,6 +18,22 @@ void setNewVideoCardAddresses(){
 
 int scrollForNextCall = 0;
 
+/*int maxof(int n_args, ...){
+	register int i;
+	int max, a;
+	va_list ap;
+
+	va_start(ap, n_args);
+	max = va_arg(ap, int);
+	for(i = 2; i <= n_args; i++) {
+		if((a = va_arg(ap, int)) > max)
+			max = a;
+	}
+
+	va_end(ap);
+	return max;
+}*/
+
 int printPointer(volatile char *video, int colour, uint64_t num) {//long long int num) {
 	if(num == 0) {
 		return 0;
@@ -55,8 +71,18 @@ int printHex(volatile char *video, int colour, int num) {
 
 int printInt(volatile char *video, int colour, int num) {
 	if(num == 0) {
+	  	*(video) = 48;
+		*(video + 1) = colour;
 		return 0;
 	}
+	if(num < 0) {
+	  	*(video) = 45;
+		*(video + 1) = colour;
+		num = num * -1;
+		*(video)++;
+		*(video)++;
+	}
+	
 	int counter = printInt(video, colour, num / 10);
 	*(video + counter) = num % 10 + 48;
 	*(video + counter + 1) = colour;
@@ -126,6 +152,25 @@ void kprintf(const char *fmt, ...) {
 			scrollForNextCall = 1;
 		}
   }
+
+	/*__asm__ (
+	  //int funcname(int arg1, int *arg2, int arg3)
+		//"int $0x80"         make the request to the OS
+	  //: "=a" (res),       return result in eax ("a")
+	  //  "+b" (arg1),      pass arg1 in ebx ("b")
+	  //  "+c" (arg2),      pass arg2 in ecx ("c")
+	  //  "+d" (arg3)       pass arg3 in edx ("d")
+	  //: "a"  (128)        pass system call number in eax ("a")
+	  //: "memory", "cc"
+		mov	al, 0x0f		//; Cursor location low byte index
+		mov	dx, 0x03D4	//; Write it to the CRT index register
+		out	dx, al
+
+	 	mov	al, bl			//; The current location is in EBX. BL contains the low byte, BH high byte
+		mov	dx, 0x03D5	//; Write it to the data register
+		out	dx, al			//; low byte
+
+		);*/
 		videoCardPosition = video;
 		if(videoCardPosition >= videoCardEnd) {
 			//videoCardPosition = videoCardStart;

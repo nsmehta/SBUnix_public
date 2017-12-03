@@ -1,6 +1,10 @@
 #ifndef _TARFS_H
 #define _TARFS_H
 
+#include <sys/defs.h>
+#include <string.h>
+#include <math.h>
+
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
 
@@ -24,4 +28,23 @@ struct posix_header_ustar {
   char pad[12];
 };
 
+void tarfsInit();
+
+// tarfs data structure:
+
+typedef struct tarfs {
+  char name[128];
+  int parent;
+  uint64_t size;
+  int type;
+  uint64_t address;
+  int index;
+} tarfs;
+
+tarfs vfs[2048];
+int vfs_pointer;
+void print_vfs();
+uint64_t tar_lookup(char *);
+uint64_t tar_ls(char *);
+int tar_get_index(char *);
 #endif
