@@ -2,6 +2,7 @@
 #define _DEFS_H
 
 #define NULL ((void*)0)
+#define KERNBASE 0xffffffff80000000
 
 typedef unsigned long  uint64_t;
 typedef          long   int64_t;
@@ -23,6 +24,5 @@ typedef uint64_t pml4;
 typedef uint64_t pdp;
 typedef uint64_t pd;
 typedef uint64_t pt;
-
 
 #endif
