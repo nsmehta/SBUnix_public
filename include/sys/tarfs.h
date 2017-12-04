@@ -39,6 +39,7 @@ typedef struct tarfs {
   int type;
   uint64_t address;
   int index;
+  int offset;
 } tarfs;
 
 tarfs vfs[2048];
@@ -47,4 +48,6 @@ void print_vfs();
 uint64_t tar_lookup(char *);
 uint64_t tar_ls(char *);
 int tar_get_index(char *);
+void get_file_content(char *);
+int get_file_offset(char *);
 #endif

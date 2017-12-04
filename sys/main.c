@@ -75,12 +75,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   map_video_mem(KERNBASE + (uint64_t)0xb8000 , (uint64_t)0xb8000 , pml4_t);
   print_va_to_pa(KERNBASE + (uint64_t)0x201230 ,pml4_t);
   pml4* new_pml = (pml4 *)(KERNBASE + (uint64_t)pml4_t);
-  __asm__ volatile("mov %0, %%cr3"::"b"(pml4_t));
-  setNewVideoCardAddresses();
+  //__asm__ volatile("mov %0, %%cr3"::"b"(pml4_t));
+  //setNewVideoCardAddresses();
   kprintf("After loading cr3\n");
   //print_next_free();
   kprintf("Value pointed is: %p\n", *new_pml);
-  p1 = (pcb*)kmalloc(sizeof(pcb));
+  /*p1 = (pcb*)kmalloc(sizeof(pcb));
   p2 = (pcb*)kmalloc(sizeof(pcb));
   void (*f_ptr)() = &kthread2;
   p2->kstack[127] = (uint64_t)f_ptr;
@@ -89,6 +89,13 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   p2->pid = 1;
   kthread();
   kprintf("the func ptr is %p\n", (uint64_t)f_ptr);
+  */
+  tarfsInit();
+  print_vfs();
+  get_file_content("/rootfs/");
+  //get_file_content("/rootfs/bin/");
+  //get_file_content("/rootfs/usr/");    
+  kprintf("Index is %s\n", vfs[tar_get_index("/rootfs/usr/hello.c")].name);
   //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
   while(1);
 }
