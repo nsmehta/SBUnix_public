@@ -49,5 +49,6 @@ uint64_t tar_lookup(char *);
 uint64_t tar_ls(char *);
 int tar_get_index(char *);
 void get_file_content(char *);
+int test_offset(char *);
 int get_file_offset(char *);
 #endif
