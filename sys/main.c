@@ -6,6 +6,8 @@
 #include <sys/paging.h>
 #include <sys/mm.h>
 #include <sys/task.h>
+#include <sys/elf64.h>
+#include <sys/file.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -92,10 +94,41 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   */
   tarfsInit();
   print_vfs();
-  get_file_content("/rootfs/");
+  //get_file_content("/rootfs/");
+  //get_file_content("usr/hello.c");
   //get_file_content("/rootfs/bin/");
   //get_file_content("/rootfs/usr/");    
-  kprintf("Index is %s\n", vfs[tar_get_index("/rootfs/usr/hello.c")].name);
+  //get_file_content("/rootfs/bin/sbush");
+  //kprintf("returned to main\n");
+  //get_file_content("/rootfs/lib/libc.a");
+  //kprintf("returned to main\n");
+  Elf64_Ehdr *p = get_elf("bin/sbush");
+  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+  int result = validate_elf_header(p);
+  kprintf("result = %d\n", result);
+  result = check_elf_loadable(p);
+  kprintf("elf loadable = %d\n", result);
+
+  Elf64_Ehdr *q = get_elf("bin/hello.c");
+  kprintf("\nreturned to main %x%c\n", q->e_ident[0], q->e_ident[1]);
+  result = validate_elf_header(q);
+  kprintf("result = %d\n", result);
+  result = check_elf_loadable(q);
+  kprintf("elf loadable = %d\n", result);
+
+  struct posix_header_ustar *r = get_tarfs("bin/hello.c");
+  struct file *fp = open_tarfs(r);
+  kprintf("\nfp = %p\n", fp);
+  result = validate_elf_header_from_fp(fp);
+  kprintf("validate_elf_header_from_fp = %d\n", result);
+  result = check_elf_loadable_from_fp(fp);
+  kprintf("elf loadable = %d\n", result);
+
+  //Elf64_Ehdr *q = get_elf("lib/libc.a");
+  //kprintf("\nreturned to main  %x%c\n", q->e_ident[0], q->e_ident[1]);
+  //get_file_content("/rootfs/lib/crt1.o");
+  //kprintf("Index is %s\n", vfs[tar_get_index("/rootfs/usr/hello.c")].name);
+  //print_vfs();
   //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
   while(1);
 }

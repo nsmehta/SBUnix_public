@@ -1,6 +1,7 @@
 #include <sys/tarfs.h>
 #include <sys/kprintf.h>
 #include <sys/elf64.h>
+#include <sys/paging.h>
 
 void assign_vfs_slot(int nindex, char nname[128], int nparent, uint64_t nsize, int ntype, uint64_t naddress, int noffset) {
 	strcpy(vfs[nindex].name, nname);
@@ -75,7 +76,7 @@ void tarfsInit() {
 		strcpy(file_name, p->name);
 		strrevcat(file_name, root_directory);
 		strcpy(file_name, root_directory);
-		kprintf(" name=%s ", file_name);
+		//kprintf(" name=%s ", file_name);
 		//kprintf("mode=%s ", oct2bin((unsigned char *)p->mode, 8));
 		//kprintf("linkname=%s ", p->linkname);
 		//kprintf("uname=%s ", p->uname);
@@ -96,7 +97,7 @@ void tarfsInit() {
 		//kprintf("file_size/512: %d %d\n", file_size, file_size%512);
 		//kprintf("offset = %d", offset);
 		uint64_t address = (uint64_t)p + file_size;
-		kprintf("address= %p\n", address);
+		//kprintf("address= %p\n", address);
 		if(file_size == 0 || file_size % 512 == 0) {
 		  offset += file_size + 512;
 		}
@@ -134,8 +135,8 @@ void tarfsInit() {
 
 void print_vfs() {
 	for(int i = 0; i < vfs_pointer; i++) {
-	  kprintf("Index = %d, Name = %s, ParentIndex = %d, size = %d, offset = %d\n", i, vfs[i].name, vfs[i].parent, vfs[i].size, vfs[i].offset);
-	  //kprintf("Name = %s, address = %p\n", vfs[i].name, vfs[i].address);
+	  //kprintf("Index = %d, Name = %s, ParentIndex = %d, size = %d, offset = %d\n", i, vfs[i].name, vfs[i].parent, vfs[i].size, vfs[i].offset);
+	  kprintf("Name = %s, offset = %d, size = %d\n", vfs[i].name, vfs[i].offset, vfs[i].size);
 	}
 }
 
@@ -263,7 +264,7 @@ int get_file_offset(char *filename) {
 
     Elf64_Ehdr *elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + offset);
     if(elf_header->e_ident[0] == 0x7f) {
-  		kprintf("e_ident[0] = 0x%x%c%c%c, offset = %d\n", elf_header->e_ident[0], elf_header->e_ident[1], elf_header->e_ident[2], elf_header->e_ident[3], offset);
+      //kprintf("e_ident[0] = 0x%x%c%c%c, offset = %d\n", elf_header->e_ident[0], elf_header->e_ident[1], elf_header->e_ident[2], elf_header->e_ident[3], offset);
     }
     
 
@@ -283,18 +284,140 @@ int get_file_offset(char *filename) {
 }
 
 
-void get_file_content(char *filename) {
-  //int file_index = tar_get_index(filename);
-  //int file_offset = file_index * 512 + 512;
-  //int file_offset = vfs[file_index].offset;
-  int file_offset = test_offset(filename);
-  kprintf("file_offset = %d\n", file_offset);
-  Elf64_Ehdr *elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + file_offset);
-      /*kprintf("e_ident[0] = %x ", elf_header->e_ident[0]);
-  kprintf("e_ident[1] = %c ", elf_header->e_ident[1]);
-  kprintf("e_ident[2] = %c ", elf_header->e_ident[2]);
-  kprintf("e_ident[3] = %c\n", elf_header->e_ident[3]);
+int test_offset(char *filename) {
+  //struct posix_header_ustar *p = (struct posix_header_ustar *) &_binary_tarfs_start;
+	int offset = 512;
+	char root_directory_name[9] = "/rootfs/";
+	//while(strlen(p->name) != 0) {
+	struct posix_header_ustar *p = (struct posix_header_ustar *)&_binary_tarfs_start;
+	//int file_number = 0;
+	while(p <= (struct posix_header_ustar *)&_binary_tarfs_end) { // && strlen(p->name) != 0) {
+
+	
+	  //while(p <= (struct posix_header_ustar *) &_binary_tarfs_end) {
+	  p = (struct posix_header_ustar *) (&_binary_tarfs_start + offset);
+		uint64_t file_size = oct2bin((unsigned char *)p->size, 11);
+		//kprintf("p->name = %s %s %d\n", p->name, filename, strcmp(p->name, filename));
+		char p_filename[128];
+		char *root_directory = "";
+		strcpy(root_directory, root_directory_name);
+		strcpy(p_filename, p->name);
+		strrevcat(p_filename, root_directory);
+		strcpy(p_filename, root_directory);
+		kprintf("name = %s %s\n", p_filename, filename);
+
+		if(strcmp(p_filename, filename) == 0) {
+		  return offset + 512;
+		  //return p;
+		}
+		if(file_size == 0) {
+			offset += 512;
+		} else {
+			offset += (file_size % 512 == 0) ? file_size + 512 : file_size + (512 - file_size % 512) + 512;
+		}
+		
+		//p += 1 + file_size/512;
+		//kprintf("binary start and end: %p, %p",p, &_binary_tarfs_end);
+	}
+	return 0;
+}
+
+struct posix_header_ustar *traverse_tarfs(char *filename) {
+  struct posix_header_ustar *p = (struct posix_header_ustar *)&_binary_tarfs_start;
+  //while(p->name[0] != '\0' && p != NULL) {
+  while(p <= (struct posix_header_ustar *)&_binary_tarfs_end) {
+    int file_size = oct2bin((unsigned char *)p->size, 11);
+    //kprintf("p->name %s ", p->name);
+    if(strcmp(filename, p->name) == 0) {
+      kprintf("file_size = %d\n", file_size);
+      return p;// + 1 + file_size/512 + (file_size%512 != 0);    
+    }
+    //p += 1 + file_size/512 + (file_size%512 != 0);
+    p += 1;
+  }
+  return NULL;
+}
+
+struct file *open_tarfs(struct posix_header_ustar *p) {
+  struct file *file_pointer = (struct file *)kmalloc(sizeof(struct file));
+  if(file_pointer == NULL) {
+    return NULL;
+  }
+
+  file_pointer->data = p;
+  file_pointer->file_size = oct2bin((unsigned char *)p->size, 11);
+  file_pointer->file_offset = (uint64_t)p + sizeof(struct posix_header_ustar);
+  file_pointer->file_error = 0;
+  file_pointer->flag = READONLY;
+  file_pointer->file_count = 1;
+  return file_pointer;
+}
+
+
+Elf64_Ehdr *get_elf(char *filename) {
+  struct posix_header_ustar *p = (traverse_tarfs(filename));
+  //struct Elf64_Ehdr *p = (struct Elf64_Ehdr *)((traverse_tarfs(filename)));
+	//void *temp = (void *)((traverse_tarfs(filename)));
+	//Elf64_Ehdr *p = (Elf64_Ehdr *) traverse_tarfs(filename);
+  kprintf("\nreturned from traverse_tarfs\n");
+  kprintf("p->name: %s\n", p->name);
+  kprintf("\nhi\n");
+  if(p == NULL) {
+    kprintf("file not found!\n\n");
+    return NULL;
+    }
+  else{
+
+    kprintf("\n p->name: %s\n", p->name);
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)((char *)p + sizeof(struct posix_header_ustar));
+    //Elf64_Ehdr *ehdr = (Elf64_Ehdr *)p;
+    return ehdr;
+    kprintf("ehdr = %c\n", ehdr->e_ident[1]);
+    kprintf("\nhi\n");
+    }
   
+}
+
+
+struct posix_header_ustar *get_tarfs(char *filename) {
+  struct posix_header_ustar *p = (traverse_tarfs(filename));
+  //struct Elf64_Ehdr *p = (struct Elf64_Ehdr *)((traverse_tarfs(filename)));
+	//void *temp = (void *)((traverse_tarfs(filename)));
+	//Elf64_Ehdr *p = (Elf64_Ehdr *) traverse_tarfs(filename);
+  kprintf("\nreturned from traverse_tarfs\n");
+  kprintf("p->name: %s\n", p->name);
+  kprintf("\nhi\n");
+  if(p == NULL) {
+    kprintf("file not found!\n\n");
+    return NULL;
+    }
+  else{
+
+    kprintf("\n p->name: %s\n", p->name);
+    //Elf64_Ehdr *ehdr = (Elf64_Ehdr *)((char *)p + sizeof(struct posix_header_ustar));
+    //Elf64_Ehdr *ehdr = (Elf64_Ehdr *)p;
+    return p;
+    //kprintf("ehdr = %c\n", ehdr->e_ident[1]);
+    //kprintf("\nhi\n");
+    }
+  
+}
+
+
+void get_file_content(char *filename) {
+  int file_offset = get_file_offset(filename);
+  int file_index = tar_get_index(filename);
+  //int file_offset = file_index * 512 + 512;
+  file_offset = vfs[file_index].offset;
+  //int file_offset = test_offset(filename);
+  //kprintf("file_offset = %d\n", file_offset);
+  //kprintf("start, end = %p, %p\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  Elf64_Ehdr *elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + file_offset);
+  kprintf("e_ident[0] = %x ", elf_header->e_ident[0]);
+  kprintf("%c ", elf_header->e_ident[1]);
+  kprintf("%c ", elf_header->e_ident[2]);
+  kprintf("%c\n", elf_header->e_ident[3]);
+  /*
   //file_offset = vfs[file_index].offset + 512;
 
   file_offset += 512;
@@ -306,47 +429,15 @@ void get_file_content(char *filename) {
   kprintf("e_ident[3] = %c\n", elf_header->e_ident[3]);
   */
   file_offset += 1024;
-  kprintf("file_offset = %d\n", file_offset);
+  //kprintf("file_offset = %d\n", file_offset);
   elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + file_offset);
   kprintf("e_ident[0] = %x ", elf_header->e_ident[0]);
-  kprintf("e_ident[1] = %c ", elf_header->e_ident[1]);
-  kprintf("e_ident[2] = %c ", elf_header->e_ident[2]);
-  kprintf("e_ident[3] = %c\n", elf_header->e_ident[3]);
+  kprintf("%c ", elf_header->e_ident[1]);
+  kprintf("%c ", elf_header->e_ident[2]);
+  kprintf("%c\n", elf_header->e_ident[3]);
+
+
+  file_offset = test_offset(filename);
+  kprintf("test offset = %d\n", file_offset);
   
-
-/*
-  file_offset = vfs[file_index].offset - 512;
-  kprintf("file_offset = %d\n", file_offset);
-  elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + file_offset);
-  kprintf("e_ident[0] = %x ", elf_header->e_ident[0]);
-  kprintf("e_ident[1] = %c ", elf_header->e_ident[1]);
-  kprintf("e_ident[2] = %c ", elf_header->e_ident[2]);
-  kprintf("e_ident[3] = %c\n", elf_header->e_ident[3]);
-
-  file_offset = vfs[file_index].offset + 512 + 512;
-  kprintf("file_offset = %d\n", file_offset);
-  elf_header = (Elf64_Ehdr *) (&_binary_tarfs_start + file_offset);
-  kprintf("e_ident[0] = %x ", elf_header->e_ident[0]);
-  kprintf("e_ident[1] = %c ", elf_header->e_ident[1]);
-  kprintf("e_ident[2] = %c ", elf_header->e_ident[2]);
-  kprintf("e_ident[3] = %c\n", elf_header->e_ident[3]);
-  */
-}
-
-int test_offset(char *filename) {
-	struct posix_header_ustar *p = (struct posix_header_ustar *) &_binary_tarfs_start;
-	int offset = 512;
-	while(strlen(p->name) != 0) {
-		p = (struct posix_header_ustar *) (&_binary_tarfs_start + offset);
-		uint64_t file_size = oct2bin((unsigned char *)p->size, 11);
-		if(strcmp(p->name, filename) >= 0) {
-			return offset + 512;
-		}
-		if(file_size == 0) {
-			offset += 512;
-		} else {
-			offset += (file_size % 512 == 0) ? file_size + 512 : file_size + (512 - file_size % 512) + 512;
-		}
-	}
-	return 0;
 }

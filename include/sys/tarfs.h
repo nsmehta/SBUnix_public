@@ -4,6 +4,7 @@
 #include <sys/defs.h>
 #include <string.h>
 #include <math.h>
+#include <sys/file.h>
 
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
@@ -51,4 +52,8 @@ int tar_get_index(char *);
 void get_file_content(char *);
 int test_offset(char *);
 int get_file_offset(char *);
+//Elf64_Ehdr *get_elf(char *);
+struct posix_header_ustar *get_tarfs(char *);
+struct posix_header_ustar *traverse_tarfs(char *);
+struct file *open_tarfs(struct posix_header_ustar *);
 #endif

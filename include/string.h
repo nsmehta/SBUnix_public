@@ -2,6 +2,7 @@
 #define _STRING_H_
 
 int strcmp(char *, char *);
+int strsubcmp(char *, char *, int, int);
 int strcpy(char *, char *);
 int strsubcpy(char *, char *, int, int);
 int strcat(char *, char *);

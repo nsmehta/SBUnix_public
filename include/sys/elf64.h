@@ -1,6 +1,9 @@
 #ifndef _ELF64_H
 #define _ELF64_H
 
+#include <sys/defs.h>
+#include <sys/file.h>
+
 #define EI_NIDENT 16
 
 typedef uint64_t Elf64_Addr;
@@ -40,4 +43,21 @@ typedef struct {
   Elf64_Xword   p_align;
 } Elf64_Phdr;
 
+
+/*Program Header segment type*/
+
+#define PT_NULL 0
+#define PT_LOAD 1
+#define PT_DYNAMIC 2
+#define PT_INTERP 3
+#define PT_NOTE 4
+#define PT_SHLIB 5
+#define PT_PHDR 6
+
+
+Elf64_Ehdr *get_elf(char *);
+int validate_elf_header(Elf64_Ehdr *);
+int validate_elf_header_from_fp(struct file *);
+int check_elf_loadable(Elf64_Ehdr *); 
+int check_elf_loadable_from_fp(struct file *); 
 #endif
