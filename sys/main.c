@@ -8,6 +8,9 @@
 #include <sys/task.h>
 #include <sys/elf64.h>
 #include <sys/file.h>
+#include <sys/keyboard.h>
+#include <sys/idt.h>
+#include <sys/isr.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -49,6 +52,17 @@ void kthread2(){
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
   initScreen();
+
+
+	// while(1);
+
+  // __asm__ __volatile__ ("int $0x3");
+  //__asm__ __volatile__ ("int $0x4");
+  __asm__ __volatile__ ("int $0x21");
+  __asm__ __volatile__ ("int $0x21");
+  kprintf("after interrupt");
+  //while(1);
+
   pml4 *pml4_t;
   struct smap_t {
     uint64_t base, length;
@@ -92,17 +106,28 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kthread();
   kprintf("the func ptr is %p\n", (uint64_t)f_ptr);
   */
-  tarfsInit();
-  print_vfs();
+  //tarfsInit();
+  //`print_vfs();
   //get_file_content("/rootfs/");
   //get_file_content("usr/hello.c");
   //get_file_content("/rootfs/bin/");
-  //get_file_content("/rootfs/usr/");    
+  //get_file_content("/rootfs/usr/");
   //get_file_content("/rootfs/bin/sbush");
   //kprintf("returned to main\n");
   //get_file_content("/rootfs/lib/libc.a");
   //kprintf("returned to main\n");
-  Elf64_Ehdr *p = get_elf("bin/sbush");
+  
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*Elf64_Ehdr *p = get_elf("bin/sbush");
   kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
   int result = validate_elf_header(p);
   kprintf("result = %d\n", result);
@@ -130,6 +155,37 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //kprintf("Index is %s\n", vfs[tar_get_index("/rootfs/usr/hello.c")].name);
   //print_vfs();
   //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+  //int i;
+  // uint16_t port = 0x20;
+  // uint8_t data = 0x20;
+  // __asm__ __volatile__(
+	// 	       "outb %0, %1;"
+	// 	       :
+	// 	       :"a" (data), "d" (port)
+	// 	       );
+  // for(i=0; i<20; i++) {
+  //   keyboard_interrupt();
+  // }
+  // kprintf("\ndone\n");
+  // isr_install();
+
+  // int var = 0;
+  // int var2 = 0;
+  // kprintf("var = %d", var/var2);
+  //  for(;;) {
+  //    __asm__ __volatile__("hlt;");
+  //  }
+*/
+
+
+
+
+
+
+
+
+
+
   while(1);
 }
 
@@ -146,7 +202,12 @@ void boot(void)
     :"=g"(loader_stack)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
+
   init_gdt();
+  idt_install();
+  init_idt();
+
+
   start(
     (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
     (uint64_t*)&physbase,
