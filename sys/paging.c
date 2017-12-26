@@ -22,6 +22,7 @@ void map_mem_to_pages(uint64_t end, uint64_t physfree){
   Page *last = NULL;
   entire_list = (Page *) physfree;
   temp = entire_list;
+  // created a linked list of all the pages
   for(i = 0; i < end; i += PAGESIZE){
     temp->b_addr = i;
     temp->nxtPage = temp + sizeof(Page);
@@ -32,17 +33,24 @@ void map_mem_to_pages(uint64_t end, uint64_t physfree){
   last->nxtPage = NULL;
   temp = entire_list;
   size_list = num_pages * sizeof(Page);
+  
+  // calculate the number of pages required to store the linked list of all pages
   if(size_list%PAGESIZE != 0){
     n_pg_list = size_list/PAGESIZE + 1; //Rounding up
   }else{
     n_pg_list = size_list/PAGESIZE;
   }
+
+  
   kprintf("size of page list is : %p and number of pages used to store it%p\n", size_list, n_pg_list);
   start_addr_of_fl = physfree + n_pg_list * PAGESIZE;
   kprintf("The start of free pages is %p\n", start_addr_of_fl);
+  // create linked list of free and allocated pages
   create_free_list(start_addr_of_fl);
 }
 
+// maps all pages above the linked list (stored above physfree) as free
+// and from physfree and end of linked list as allocated
 void create_free_list(uint64_t start_addr_of_fl){
   Page *temp;
   temp = entire_list;
@@ -51,21 +59,24 @@ void create_free_list(uint64_t start_addr_of_fl){
     if(sfl_flag == 0){
       temp->status = 1;
       if(temp->nxtPage->b_addr == start_addr_of_fl){
-        sfl_flag = 1;
+        sfl_flag = ALLOCATED;
         free_list_head = temp->nxtPage;
       }
       temp = temp->nxtPage;
     }
     else{
-      temp->status = 0;
+      temp->status = FREE;
       temp = temp->nxtPage;
     }
   }
-  kprintf("Free_list_head : %p\n", free_list_head->b_addr);
+  kprintf("Free_list_head->b_addr : %p\n", free_list_head->b_addr);
+  //kprintf("Free_list_head : %p\n", free_list_head);
 }
 
 uint64_t get_next_free_page(){
   Page *temp = free_list_head;
+  //kprintf("next free page: %p\n", temp);
+  //return (uint64_t)123;
   if(free_list_head == NULL){
     return -1;
   }else{
@@ -76,6 +87,7 @@ uint64_t get_next_free_page(){
   return -1;
 }
 
+// map all physical pages from physbase to end in a 1:1 mapping with virtual memory
 void map_kernal(uint64_t start, uint64_t end, uint64_t paddr, pml4* pml4_t){
   uint64_t num_pages = 0;
   uint64_t i;
@@ -85,6 +97,8 @@ void map_kernal(uint64_t start, uint64_t end, uint64_t paddr, pml4* pml4_t){
   }else{
     num_pages = k_size / PAGESIZE + 1;
   }
+  kprintf("numpages = %d\n", num_pages);
+  // page walk for all the pages in the physical memory
   for(i = 0; i < num_pages; i++){
     pml4_entry(start + (i * PAGESIZE), paddr + (i * PAGESIZE), pml4_t);
   }
@@ -94,14 +108,20 @@ void map_video_mem(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
   pml4_entry(vaddr, paddr, pml4_t);
 }
 
+// map the pml4 entry
 void pml4_entry(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
   uint64_t pml4off = get_offset(vaddr, PML4SHIFT);
   pdp *pdpt;
+  // if no mapping of pdpt present
   if(*(pml4_t + pml4off) == 0){
+    // create new pdpt at next free page
     pdpt = (pdp *)get_next_free_page();
     if(*pdpt != -1){
+      // store pdpt entry at the offset with present and read/write bits set
       *(pml4_t + pml4off) = (uint64_t)pdpt | 0x3;
+      // clear the newly created pdpt
       memset((void *) pdpt, 0, PAGESIZE);
+      // now map the pdpt entry
       pdpt_entry(vaddr, paddr, pdpt);
     }else{
       kprintf("Ran out of memory\n");
@@ -113,6 +133,8 @@ void pml4_entry(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
   //kprintf("Going to pdp: entry at offset is\n", *(pml4_t + pml4off));
 }
 
+
+// map the pdpt entry
 void pdpt_entry(uint64_t vaddr, uint64_t paddr, pdp* pdpt){
   uint64_t pdpoff = get_offset(vaddr, PDPSHIFT);
   pd *pd_t;
@@ -173,8 +195,11 @@ void print_va_to_pa(uint64_t vaddr,pml4* pml4_t){
 }
 
 void print_next_free(){
-  //uint64_t addr = free_list_head;
-  kprintf("next free page base is : n");
+  uint64_t addr = (uint64_t)free_list_head;
+  //print_va_to_pa(free_list_head->b_addr, ();
+  //get_next_free_page();
+  kprintf("next free page base is : %p\n", addr);
+  
 }
 
 uint64_t kmalloc(uint64_t size){
