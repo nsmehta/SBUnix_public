@@ -88,7 +88,7 @@ uint64_t get_next_free_page(){
 }
 
 // map all physical pages from physbase to end in a 1:1 mapping with virtual memory
-void map_kernal(uint64_t start, uint64_t end, uint64_t paddr, pml4* pml4_t){
+void map_kernel(uint64_t start, uint64_t end, uint64_t paddr, pml4* pml4_t){
   uint64_t num_pages = 0;
   uint64_t i;
   uint64_t k_size = end - start;
@@ -102,6 +102,7 @@ void map_kernal(uint64_t start, uint64_t end, uint64_t paddr, pml4* pml4_t){
   for(i = 0; i < num_pages; i++){
     pml4_entry(start + (i * PAGESIZE), paddr + (i * PAGESIZE), pml4_t);
   }
+
 }
 
 void map_video_mem(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
@@ -153,6 +154,7 @@ void pdpt_entry(uint64_t vaddr, uint64_t paddr, pdp* pdpt){
   }
 }
 
+// map the pd entry
 void pd_entry(uint64_t vaddr, uint64_t paddr, pd* pd_t){
   uint64_t pdoff = get_offset(vaddr, PDSHIFT);
   pt *pt_t = NULL;
@@ -171,11 +173,14 @@ void pd_entry(uint64_t vaddr, uint64_t paddr, pd* pd_t){
   }
 }
 
+// map the pt entry, insert Physical Address at the PT entry and enable read/write+access to the page
 void pt_entry(uint64_t vaddr, uint64_t paddr, pt* pt_t){
   uint64_t ptoff = get_offset(vaddr, PTSHIFT);
   *(pt_t + ptoff) = paddr | 0x3;
+  
 }
 
+// prints the corresponding physical address for given virtual address
 void print_va_to_pa(uint64_t vaddr,pml4* pml4_t){
   pdp *pdpt;
   pd *pd_t;
@@ -221,4 +226,8 @@ uint64_t kmalloc(uint64_t size){
   
   //kprintf("New flh is : %p\n", free_list_head);
   return ret_addr;
+}
+
+void set_cr3(pml4* pml4_t) {
+  __asm__ volatile("mov %0, %%cr3"::"b"(pml4_t));
 }
