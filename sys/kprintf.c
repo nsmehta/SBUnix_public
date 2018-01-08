@@ -2,7 +2,8 @@
 //#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#define kernbase 0xffffffff80000000
+#include <sys/defs.h>
+//#define kernbase 0xffffffff80000000
 
 enum dataTypes {character, integer, hex, string, pointer};
 #define BUFFER 256
@@ -13,7 +14,7 @@ volatile char *videoCardPosition = (volatile char *)0xB8000;
 void setNewVideoCardAddresses(){
 	videoCardEnd = (volatile char *)0xFFFFFFFF800B8FA0;
 	videoCardStart = (volatile char *)0xFFFFFFFF800B8000;
-	videoCardPosition = kernbase + videoCardPosition;
+	videoCardPosition = KERNBASE + videoCardPosition;
 }
 
 int scrollForNextCall = 0;
@@ -202,6 +203,9 @@ void scroll() {
 	}
 	//for the last line, print blank spaces
 	for(j = 0; j < 160; j++) {
+		if(p > videoCardEnd) {
+			break;
+		}
 		*p = ' ';
 		p += 2;
 	}
