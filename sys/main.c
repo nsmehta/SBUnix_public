@@ -68,14 +68,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   initScreen();
 
 
-	// while(1);
-
-  // __asm__ __volatile__ ("int $0x3");
-  //__asm__ __volatile__ ("int $0x4");
   __asm__ __volatile__ ("int $0x21");
   __asm__ __volatile__ ("int $0x21");
   kprintf("after interrupt\n");
-  //while(1);
 
   pml4 *pml4_t;
   struct smap_t {
@@ -89,8 +84,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
-      if(i == 2)
-        break;
+      //if(i == 2)
+      //  break;
       i++;
       kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
       end = smap->base + smap->length;
@@ -102,20 +97,41 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("physbase is : %p\n", (uint64_t)physbase);
   pml4_t = (pml4 *)get_next_free_page();
   memset((void *) pml4_t, 0, PAGESIZE);
-
-
+  int a = 0;
+  kprintf("End is %p\n", end);
   kprintf("Value in pml4_t %p\n", *pml4_t);
-  map_kernal(KERNBASE + (uint64_t)physbase, KERNBASE + (uint64_t)end, (uint64_t) physbase ,pml4_t);
+  //kprintf("pml4_t = %p\n", pml4_t);
+  //while(1);
+  // identity mapping the pages between physbase and end in a 1:1 mapping starting from KERNBASE
+  map_kernel(KERNBASE + (uint64_t)physbase, KERNBASE + (uint64_t)end, (uint64_t) physbase ,pml4_t);
+  // mappinng the video memory to point to changed addresses
   map_video_mem(KERNBASE + (uint64_t)0xb8000 , (uint64_t)0xb8000 , pml4_t);
+
+  //map_kernel((uint64_t)&_binary_tarfs_start, (uint64_t)&_binary_tarfs_end, (uint64_t)&_binary_tarfs_start - KERNBASE,pml4_t);
+  //map_kernel((uint64_t)&a, PAGESIZE + (uint64_t)&a, (uint64_t)&a - KERNBASE ,pml4_t);
+  
   print_va_to_pa(KERNBASE + (uint64_t)0x201230 ,pml4_t);
+  print_va_to_pa((uint64_t)&a, pml4_t);
+  //print_va_to_pa((uint64_t)&_binary_tarfs_start, pml4_t);
   //pml4* new_pml = (pml4 *)(KERNBASE + (uint64_t)pml4_t);
-  __asm__ volatile("mov %0, %%cr3"::"b"(pml4_t));
+
+  kprintf("bin start, end: %p, %p, %p\n", (uint64_t)&_binary_tarfs_start, (uint64_t)&_binary_tarfs_end, &a);
+
+  //struct posix_header_ustar *p = (struct posix_header_ustar *)(&_binary_tarfs_start);
+  //kprintf("p->size = %x\n", p->size);
+
+  //kprintf("pml4_t = %p\n", pml4_t);
+  
+  set_cr3(pml4_t);
   setNewVideoCardAddresses();
+  //setNewTarfsAddress();
   kprintf("After loading cr3\n");
-  //print_next_free();
-  //kprintf("Value pointed is: %p\n", *new_pml);
-  //kthread();
-	//while(1);
+
+  init_gdt();
+  idt_install();
+  init_idt();
+
+  
   p1 = (pcb*)kmalloc(sizeof(pcb));
   p2 = (pcb*)kmalloc(sizeof(pcb));
   void (*f_ptr)() = &kthread2;
@@ -124,10 +140,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   p2->pid = 1;
   kthread();
-  //kprintf("the func ptr is %p\n", (uint64_t)f_ptr);
   
-  //tarfsInit();
-  //`print_vfs();
+
+  tarfs_init();
+  print_vfs();
+
+  
   //get_file_content("/rootfs/");
   //get_file_content("usr/hello.c");
   //get_file_content("/rootfs/bin/");
@@ -138,29 +156,21 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //kprintf("returned to main\n");
   
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*Elf64_Ehdr *p = get_elf("bin/sbush");
+  
+  Elf64_Ehdr *p = get_elf("bin/sbush");
   kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
   int result = validate_elf_header(p);
   kprintf("result = %d\n", result);
   result = check_elf_loadable(p);
   kprintf("elf loadable = %d\n", result);
-
-  Elf64_Ehdr *q = get_elf("bin/hello.c");
+  
+  Elf64_Ehdr *q = get_elf("lib/crt1.o");
   kprintf("\nreturned to main %x%c\n", q->e_ident[0], q->e_ident[1]);
   result = validate_elf_header(q);
   kprintf("result = %d\n", result);
   result = check_elf_loadable(q);
   kprintf("elf loadable = %d\n", result);
-
+  /*
   struct posix_header_ustar *r = get_tarfs("bin/hello.c");
   struct file *fp = open_tarfs(r);
   kprintf("\nfp = %p\n", fp);
@@ -168,7 +178,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("validate_elf_header_from_fp = %d\n", result);
   result = check_elf_loadable_from_fp(fp);
   kprintf("elf loadable = %d\n", result);
-
+  */
   //Elf64_Ehdr *q = get_elf("lib/libc.a");
   //kprintf("\nreturned to main  %x%c\n", q->e_ident[0], q->e_ident[1]);
   //get_file_content("/rootfs/lib/crt1.o");
@@ -195,15 +205,6 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //  for(;;) {
   //    __asm__ __volatile__("hlt;");
   //  }
-*/
-
-
-
-
-
-
-
-
 
 
   while(1);

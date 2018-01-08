@@ -29,7 +29,7 @@ struct posix_header_ustar {
   char pad[12];
 };
 
-void tarfsInit();
+void tarfs_init();
 
 // tarfs data structure:
 
@@ -56,4 +56,5 @@ int get_file_offset(char *);
 struct posix_header_ustar *get_tarfs(char *);
 struct posix_header_ustar *traverse_tarfs(char *);
 struct file *open_tarfs(struct posix_header_ustar *);
+void setNewTarfsAddress();
 #endif
