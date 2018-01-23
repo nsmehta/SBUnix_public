@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/file.h>
+#include <sys/elf64.h>
 
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
@@ -56,5 +57,6 @@ int get_file_offset(char *);
 struct posix_header_ustar *get_tarfs(char *);
 struct posix_header_ustar *traverse_tarfs(char *);
 struct file *open_tarfs(struct posix_header_ustar *);
+struct file *open_tarfs_from_elf(Elf64_Ehdr *);
 void setNewTarfsAddress();
 #endif

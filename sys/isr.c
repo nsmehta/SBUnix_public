@@ -4,6 +4,8 @@
 #include <sys/kprintf.h>
 #include <sys/io.h>
 #include <sys/keyboard.h>
+#include <sys/paging.h>
+
 /* from http://www.osdever.net/bkerndev/Docs/isrs.htm */
 
 /*ISR prototypes*/
@@ -117,16 +119,20 @@ char *exception_messages[] = {
 
 void fault_handler(registers r)
 {
-    kprintf("in fault handler");
+    kprintf("in fault handler\n");
     // __asm__ __volatile__("iretq");
     kprintf("r.int_no = %d\n", r.int_no);
-    if (r.int_no < 32)
+    if (r.int_no == 13 || r.int_no == 14) {
+      page_fault_handler();
+    }
+    
+    else if (r.int_no < 32)
     {
         kprintf("%s", exception_messages[r.int_no]);
         kprintf(" Exception. System Halted!\n");
 
         //for (;;);
-    }
+	}
     //for (;;);
     outb(0x20, 0x20);
 }
@@ -137,14 +143,12 @@ void irq_handler(registers r)
 			outb(0x20, 0x20);
 			return;
 		}
-    //kprintf("in IRQ handler");
-    // __asm__ __volatile__("iretq");
-		//kprintf("r.int_no = %d\n", r.int_no);
+
     if (r.int_no >= 40)
     {
-        // kprintf("%s", exception_messages[r.int_no]);
+
         kprintf(" Exception. System Halted!\n");
-				//kprintf("r.int_no = %d\n", r.int_no);
+
         // send reset signal to slave
         outb(0xA0, 0x20);
     }
@@ -154,6 +158,4 @@ void irq_handler(registers r)
 
     // send reset signal to master
     outb(0x20, 0x20);
-    // for (;;);
-    // outb(0x20, 0x20);
 }

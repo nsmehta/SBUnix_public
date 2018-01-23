@@ -323,6 +323,8 @@ int test_offset(char *filename) {
 	return 0;
 }
 
+
+// traverses tarfs region to locate the file
 struct posix_header_ustar *traverse_tarfs(char *filename) {
   struct posix_header_ustar *p = (struct posix_header_ustar *)(&_binary_tarfs_start);
   //while(p->name[0] != '\0' && p != NULL) {
@@ -339,6 +341,8 @@ struct posix_header_ustar *traverse_tarfs(char *filename) {
   return NULL;
 }
 
+
+// returns the file pointer for the filename in tarfs
 struct file *open_tarfs(struct posix_header_ustar *p) {
   struct file *file_pointer = (struct file *)kmalloc(sizeof(struct file));
   if(file_pointer == NULL) {
@@ -355,15 +359,32 @@ struct file *open_tarfs(struct posix_header_ustar *p) {
 }
 
 
+// returns the file pointer for the filename in tarfs
+struct file *open_tarfs_from_elf(Elf64_Ehdr *elfh) {
+  struct file *file_pointer = (struct file *)kmalloc(sizeof(struct file));
+  if(file_pointer == NULL) {
+    return NULL;
+  }
+
+  struct posix_header_ustar *p = (struct posix_header_ustar *)((uint64_t)elfh - 512);
+
+  file_pointer->data = p;
+  file_pointer->file_size = oct2bin((unsigned char *)p->size, 11);
+  file_pointer->file_offset = (uint64_t)p + sizeof(struct posix_header_ustar);
+  file_pointer->file_error = 0;
+  file_pointer->flag = READONLY;
+  file_pointer->file_count = 1;
+  return file_pointer;
+}
+
 /*returns the pointer to the ELF header of the file*/
 Elf64_Ehdr *get_elf(char *filename) {
   struct posix_header_ustar *p = (traverse_tarfs(filename));
   //struct Elf64_Ehdr *p = (struct Elf64_Ehdr *)((traverse_tarfs(filename)));
 	//void *temp = (void *)((traverse_tarfs(filename)));
 	//Elf64_Ehdr *p = (Elf64_Ehdr *) traverse_tarfs(filename);
-  kprintf("\nreturned from traverse_tarfs\n");
-  kprintf("p->name: %s\n", p->name);
-  kprintf("\nhi\n");
+  //kprintf("\nreturned from traverse_tarfs\n");
+  //kprintf("p->name: %s\n", p->name);
   if(p == NULL) {
     kprintf("file not found!\n\n");
     return NULL;
@@ -375,7 +396,6 @@ Elf64_Ehdr *get_elf(char *filename) {
     //Elf64_Ehdr *ehdr = (Elf64_Ehdr *)p;
     return ehdr;
     kprintf("ehdr = %c\n", ehdr->e_ident[1]);
-    kprintf("\nhi\n");
     }
   
 }

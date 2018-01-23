@@ -1,6 +1,7 @@
 #include <math.h>
 #include <sys/kprintf.h>
 
+// converts octal number to decimal (base 10)
 int oct2bin(unsigned char *str, int size)
 {
   int n = 0;

@@ -131,6 +131,11 @@ void pml4_entry(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
     pdpt = (pdp *)(*(pml4_t + pml4off) & PHYMASK);
     pdpt_entry(vaddr, paddr, pdpt);
   }
+  
+  // added the 511 entry as the physical address of the base of the pml4_t
+  // self reference
+  *(pml4*)((uint64_t)pml4_t + 511) = (uint64_t)pml4_t;
+
   //kprintf("Going to pdp: entry at offset is\n", *(pml4_t + pml4off));
 }
 
@@ -230,4 +235,34 @@ uint64_t kmalloc(uint64_t size){
 
 void set_cr3(pml4* pml4_t) {
   __asm__ volatile("mov %0, %%cr3"::"b"(pml4_t));
+}
+
+uint64_t get_cr2() {
+  uint64_t current_cr2;
+  __asm__ volatile("mov %%cr2, %0":"=r"(current_cr2));
+  return current_cr2;
+}
+
+
+uint64_t get_cr3() {
+  uint64_t current_cr3;
+  __asm__ volatile("mov %%cr3, %0":"=r"(current_cr3));
+  return current_cr3;
+}
+
+
+uint64_t align_up(uint64_t p) {
+  //  return(p + (p - PAGESIZE)%PAGESIZE);
+  return((p + PAGESIZE - 1) - (p + PAGESIZE - 1)%PAGESIZE);
+}
+
+uint64_t align_down(uint64_t p) {
+  return(p - (p)%PAGESIZE);
+}
+
+void page_fault_handler() {
+  kprintf("page fault\n");
+  uint64_t current_cr2 = get_cr2();
+  kprintf("cr2 = %p\n", current_cr2);
+  return;
 }

@@ -5,8 +5,8 @@
 /*reference: https://notes.shichao.io/lkd/ch15/*/
 
 struct mm_struct {
-  struct struct vm_area_struct *mmap; //list of memory areas
-  struct rb_root mm_rb; // not used currently
+  struct vm_area_struct *mmap; //list of memory areas
+  //struct rb_root mm_rb; // not used currently
   struct vm_area_struct *mmap_cache; // last used memory area
   uint64_t free_area_cache; // last used memory area
   uint64_t *pdg; // page global directory
@@ -26,7 +26,7 @@ struct mm_struct {
   uint64_t total_vm; // total no of pages
   uint64_t locked_vm; // no of locked pages
   uint64_t flags; // status flags
-}
+};
 
 struct vm_area_struct {
   struct mm_struct *vm_mm; /* associated mm_struct */
@@ -34,7 +34,7 @@ struct vm_area_struct {
   unsigned long vm_end; /* VMA end , exclusive */
   struct vm_area_struct *vm_next; /* list of VMA's */
   uint64_t vm_file; /* mapped file, if any */
-}
+};
 
 void memset(void *, int, uint64_t);
 

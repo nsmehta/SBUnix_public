@@ -3,6 +3,7 @@
 
 #include <sys/defs.h>
 #include <sys/file.h>
+#include <sys/mm.h>
 
 #define EI_NIDENT 16
 
@@ -60,4 +61,5 @@ int validate_elf_header(Elf64_Ehdr *);
 int validate_elf_header_from_fp(struct file *);
 int check_elf_loadable(Elf64_Ehdr *); 
 int check_elf_loadable_from_fp(struct file *); 
+struct mm_struct *load_elf_vmas(Elf64_Ehdr *);
 #endif

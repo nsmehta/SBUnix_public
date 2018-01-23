@@ -146,12 +146,14 @@ isr12:
 	# 13: General Protection Fault Exception
 isr13:
 	cli
+	pushq $0		# dummy error code
 	pushq $13 		# isr number
 	jmp isr_common_stub
 
 	# 14: Page Fault Exception
 isr14:
 	cli
+	pushq $0		# dummy error code
 	pushq $14 		# isr number
 	jmp isr_common_stub
 

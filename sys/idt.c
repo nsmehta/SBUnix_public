@@ -35,7 +35,7 @@ void idt_install() {
 
   //memset to zero:
   uint8_t *temp = (uint8_t *)idtr.base;
-  for(uint32_t length = sizeof(struct idt_t) * 256; length != 0; length--) {
+  for(uint32_t length = sizeof(struct idt_t) * 256; length > 0; length--) {
     *temp++ = (uint8_t)0;
   }
 
