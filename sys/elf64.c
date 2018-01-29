@@ -66,6 +66,7 @@ struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
   int i = 0;
   struct vm_area_struct *vma_head = NULL;
   struct vm_area_struct *vma_next = NULL;
+  kprintf("starting address = %p\n", ehdr->e_entry);
 
   for(i = 0; i < ehdr->e_phnum; i++) {
     Elf64_Phdr *phdr = ((Elf64_Phdr *)(((uint64_t)ehdr) + ehdr->e_phoff)) + i;
@@ -74,21 +75,65 @@ struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
 	vma_head = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
 	vma_head->vm_start = phdr->p_vaddr;
 	vma_head->vm_end = (phdr->p_vaddr + phdr->p_memsz);
-	vma_head->vm_next = vma_next;
+	vma_head->vm_type = TYPE_FILE;
+	//vma_head->vm_next = vma_next;
+	vma_head->vm_next = NULL;
+	vma_next = vma_head;
+	kprintf("p_offset = %p\n", phdr->p_offset);
       }
       else {
-	vma_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+	vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+	vma_next = vma_next->vm_next;
 	vma_next->vm_start = phdr->p_vaddr;
 	vma_next->vm_end = (phdr->p_vaddr + phdr->p_memsz);
+	vma_head->vm_type = TYPE_FILE;
 	vma_next->vm_next = NULL;
-	vma_next = vma_next->vm_next;
+	//vma_next = vma_next->vm_next;
       }
     }
     
   }
+
+  if(vma_head == NULL) {
+    vma_head = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_head->vm_start = (uint64_t)NULL;
+    vma_head->vm_end = (uint64_t)NULL;
+    vma_head->vm_type = TYPE_STACK;
+    //vma_head->vm_next = vma_next;
+    vma_head->vm_next = NULL;
+    vma_next = vma_head;
+    
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next = vma_next->vm_next;
+    vma_next->vm_start = (uint64_t)NULL;
+    vma_next->vm_end = (uint64_t)NULL;
+    vma_head->vm_type = TYPE_HEAP;
+    vma_next->vm_next = NULL;
+    //vma_next = vma_next->vm_next;
+    
+  }
+  else {
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next = vma_next->vm_next;
+    kprintf("vma_head = %p, vma_head->vm_next = %p, vma_next = %p\n", vma_head, vma_head->vm_next, vma_next);
+    vma_next->vm_start = (uint64_t)NULL;
+    vma_next->vm_end = (uint64_t)NULL;
+    vma_head->vm_type = TYPE_STACK;
+    vma_next->vm_next = NULL;
+    //vma_next = vma_next->vm_next;
+
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next = vma_next->vm_next;
+    vma_next->vm_start = (uint64_t)NULL;
+    vma_next->vm_end = (uint64_t)NULL;
+    vma_head->vm_type = TYPE_HEAP;
+    vma_next->vm_next = NULL;
+    //vma_next = vma_next->vm_next;    
+  }
+  
   mm_head->mmap = vma_head;
-  mm_head->start_stack = kmalloc(PAGESIZE * 2);
-  mm_head->start_brk = kmalloc(PAGESIZE * 2);
+  //mm_head->start_stack = kmalloc(PAGESIZE * 2);
+  //mm_head->start_brk = kmalloc(PAGESIZE * 2);
 
   return mm_head;  
 }

@@ -54,10 +54,10 @@ void map_mem_to_pages(uint64_t end, uint64_t physfree){
 void create_free_list(uint64_t start_addr_of_fl){
   Page *temp;
   temp = entire_list;
-  int sfl_flag = 0;
+  int sfl_flag = FREE;
   while(temp){
-    if(sfl_flag == 0){
-      temp->status = 1;
+    if(sfl_flag == FREE){
+      temp->status = ALLOCATED;
       if(temp->nxtPage->b_addr == start_addr_of_fl){
         sfl_flag = ALLOCATED;
         free_list_head = temp->nxtPage;
@@ -118,8 +118,8 @@ void pml4_entry(uint64_t vaddr, uint64_t paddr, pml4* pml4_t){
     // create new pdpt at next free page
     pdpt = (pdp *)get_next_free_page();
     if(*pdpt != -1){
-      // store pdpt entry at the offset with present and read/write bits set
-      *(pml4_t + pml4off) = (uint64_t)pdpt | 0x3;
+      // store pdpt entry at the offset in PML4 with present and read/write bits set
+      *(pml4_t + pml4off) = (uint64_t)pdpt | 0x7;
       // clear the newly created pdpt
       memset((void *) pdpt, 0, PAGESIZE);
       // now map the pdpt entry
@@ -147,7 +147,8 @@ void pdpt_entry(uint64_t vaddr, uint64_t paddr, pdp* pdpt){
   if(*(pdpt + pdpoff) == 0){
     pd_t = (pdp *)get_next_free_page();
     if(*pd_t != -1){
-      *(pdpt + pdpoff) = (uint64_t)pd_t | 0x3;
+      // store pdpt entry at the offset in PDPT with present and read/write bits set
+      *(pdpt + pdpoff) = (uint64_t)pd_t | 0x7;
       memset((void *) pd_t, 0, PAGESIZE);
       pd_entry(vaddr, paddr, pd_t);
     }else{
@@ -166,7 +167,8 @@ void pd_entry(uint64_t vaddr, uint64_t paddr, pd* pd_t){
   if(*(pd_t + pdoff) == 0){
     pt_t = (pdp *)get_next_free_page();
     if(*pd_t != -1){
-      *(pd_t + pdoff) = (uint64_t)pt_t | 0x3;
+      // store pdpt entry at the offset in PDT with present and read/write bits set
+      *(pd_t + pdoff) = (uint64_t)pt_t | 0x7;
       memset((void *) pt_t, 0, PAGESIZE);
       pt_entry(vaddr, paddr, pt_t);
     }else{
@@ -181,7 +183,7 @@ void pd_entry(uint64_t vaddr, uint64_t paddr, pd* pd_t){
 // map the pt entry, insert Physical Address at the PT entry and enable read/write+access to the page
 void pt_entry(uint64_t vaddr, uint64_t paddr, pt* pt_t){
   uint64_t ptoff = get_offset(vaddr, PTSHIFT);
-  *(pt_t + ptoff) = paddr | 0x3;
+  *(pt_t + ptoff) = paddr | 0x7;
   
 }
 

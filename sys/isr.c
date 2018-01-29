@@ -122,7 +122,7 @@ void fault_handler(registers r)
     kprintf("in fault handler\n");
     // __asm__ __volatile__("iretq");
     kprintf("r.int_no = %d\n", r.int_no);
-    if (r.int_no == 13 || r.int_no == 14) {
+    if (r.int_no == 14) {
       page_fault_handler();
     }
     

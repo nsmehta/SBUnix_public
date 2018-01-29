@@ -70,9 +70,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
 
   //__asm__ __volatile__ ("int $0x21");
-  __asm__ __volatile__ ("int $15");
-  __asm__ __volatile__ ("int $14");
-  while(1);
+  //__asm__ __volatile__ ("int $15");
+  //__asm__ __volatile__ ("int $14");
+  //while(1);
   pml4 *pml4_t;
   struct smap_t {
     uint64_t base, length;
@@ -143,12 +143,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kthread();
 
 
-
-  struct file *file_pointer = (struct file *)(sizeof(struct file));
+  // for triggering page fault:
+  //struct file *file_pointer = (struct file *)(sizeof(struct file));
   //file_pointer->data = (uint64_t *)0xffffffff80808080;
-  kprintf("value = %p\n", file_pointer->data);
+  //kprintf("value = %p\n", file_pointer->data);
 
-  //tarfs_init();
+  tarfs_init();
   //print_vfs();
 
   //get_file_content("/rootfs/");
@@ -160,7 +160,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //get_file_content("/rootfs/lib/libc.a");
   //kprintf("returned to main\n");
   
-  /*
+  
   char *filename = "bin/sbush";
   Elf64_Ehdr *p = get_elf(filename);
   kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
@@ -173,17 +173,28 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     head = load_elf_vmas(p);
   }
   kprintf("mm_struct = %p\n", head->mmap->vm_start);
+  int count = 0;
+  struct vm_area_struct *temp = head->mmap;
+  while(temp != NULL){
+    kprintf("vm_start = %d\n", temp->vm_type);
+    temp = temp->vm_next;
+    count++;
+  }
+  kprintf("count = %d\n", count);
+  void *q = (void *)p->e_entry;
+  kprintf("value at start address = %p\n", q);
+  ring_3_switch((uint64_t)q);
+  kprintf("after switch to ring 3\n");
 
 
-  
+  /*
   Elf64_Ehdr *q = get_elf("lib/crt1.o");
   kprintf("\nreturned to main %x%c\n", q->e_ident[0], q->e_ident[1]);
   result = validate_elf_header(q);
   kprintf("result = %d\n", result);
   result = check_elf_loadable(q);
   kprintf("elf loadable = %d\n", result);
-  */
-  /*
+  
   struct posix_header_ustar *r = get_tarfs("bin/hello.c");
   struct file *fp = open_tarfs(r);
   kprintf("\nfp = %p\n", fp);
@@ -192,32 +203,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   result = check_elf_loadable_from_fp(fp);
   kprintf("elf loadable = %d\n", result);
   */
-  //Elf64_Ehdr *q = get_elf("lib/libc.a");
-  //kprintf("\nreturned to main  %x%c\n", q->e_ident[0], q->e_ident[1]);
-  //get_file_content("/rootfs/lib/crt1.o");
-  //kprintf("Index is %s\n", vfs[tar_get_index("/rootfs/usr/hello.c")].name);
-  //print_vfs();
-  //kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-  //int i;
-  // uint16_t port = 0x20;
-  // uint8_t data = 0x20;
-  // __asm__ __volatile__(
-	// 	       "outb %0, %1;"
-	// 	       :
-	// 	       :"a" (data), "d" (port)
-	// 	       );
-  // for(i=0; i<20; i++) {
-  //   keyboard_interrupt();
-  // }
-  // kprintf("\ndone\n");
-  // isr_install();
 
-  // int var = 0;
-  // int var2 = 0;
-  // kprintf("var = %d", var/var2);
-  //  for(;;) {
-  //    __asm__ __volatile__("hlt;");
-  //  }
 
 
   while(1);

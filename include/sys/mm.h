@@ -4,6 +4,8 @@
 
 /*reference: https://notes.shichao.io/lkd/ch15/*/
 
+enum file_types {TYPE_FILE, TYPE_STACK, TYPE_HEAP};
+
 struct mm_struct {
   struct vm_area_struct *mmap; //list of memory areas
   //struct rb_root mm_rb; // not used currently
@@ -33,9 +35,10 @@ struct vm_area_struct {
   unsigned long vm_start; /* VMA start, inclusive */
   unsigned long vm_end; /* VMA end , exclusive */
   struct vm_area_struct *vm_next; /* list of VMA's */
+  int vm_type;
   uint64_t vm_file; /* mapped file, if any */
 };
 
 void memset(void *, int, uint64_t);
-
+void ring_3_switch(uint64_t user_rip);
 #endif
