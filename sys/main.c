@@ -20,6 +20,7 @@ extern char kernmem, physbase;
 pcb *p1;
 pcb *p2;
 int count = 0;
+pml4 *virtual_pml4_t;
 
 void kthread(){
   // kprintf("hello world\n");
@@ -73,6 +74,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //__asm__ __volatile__ ("int $15");
   //__asm__ __volatile__ ("int $14");
   //while(1);
+  
   pml4 *pml4_t;
   struct smap_t {
     uint64_t base, length;
@@ -85,34 +87,102 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
-      //if(i == 2)
-      //  break;
       i++;
       kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
       end = smap->base + smap->length;
     }
   }
   kprintf("End is %p\n", end);
+  
+  memset((void *) physfree, 0, (end - (uint64_t)physfree)/(uint64_t)8);
+  
+  // creates the free list: list of free and allocated physical pages
   map_mem_to_pages(end, (uint64_t)physfree);
+  
   kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("physbase is : %p\n", (uint64_t)physbase);
-  pml4_t = (pml4 *)get_next_free_page();
+  
+  pml4_t = (pml4 *)create_kernel_pml4();
+  kprintf("PAGE_US = %d \n", PAGE_US);
+  kprintf("pml4_t[511] = %p\n", pml4_t[511]);
+  kprintf("kernel cr3 = %p\n", kernel_cr3);
+  kprintf("*pml4_t = %p\n", pml4_t);
+  
+//  uint64_t *at = (uint64_t *)0x234567;
+//  *at = 10;
+//  kprintf("at = %p, *at = %d\n", at, *at);
+  
+  uint64_t free_list_page_length = get_free_list_page_length();
+  
+  
+
+  kprintf("free_list_page_length = %p\n", free_list_page_length);
+
+  //  map_all_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p_addr_start, pml4 *kernel_pml4)
+  map_all_kernel_pages((uint64_t)KERNBASE + (uint64_t)physbase, (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (10*PAGESIZE)), (uint64_t)physbase, pml4_t);
+  //  map_all_kernel_pages((uint64_t)KERNBASE + (uint64_t)physbase, (uint64_t)KERNBASE + (uint64_t)physbase + (10*PAGESIZE), (uint64_t)physbase, pml4_t);
+  
+  // mapping video memory
+  map_all_kernel_pages((uint64_t)KERNBASE + (uint64_t)0xb8000 , (uint64_t)KERNBASE + (uint64_t)0xb8000 + PAGESIZE, (uint64_t)0xb8000 , pml4_t);
+  
+  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)physbase ,pml4_t);
+  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)physfree ,pml4_t);
+  //  print_va_to_pa((uint64_t)&a, pml4_t);
+  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)0xb8000, pml4_t);
+  
+  
+  // loaading new value in cr3 register
+  //  set_cr3((pml4 *)kernel_cr3);
+  __asm__ __volatile__("movq %0, %%cr3"::"r"(kernel_cr3));
+  
+  setNewVideoCardAddresses();
+  kprintf("new cr3 successfully set\n");
+  
+  //  set top virtual address
+  set_top_virtual_address((uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE) + (20*PAGESIZE));
+
+  kprintf("max size_t = %p\n", (size_t)-1);
+  
+  
+//  uint64_t new_address = kmalloc(PAGESIZE);
+//  
+//  kprintf("new_address = %p\n", new_address);
+
+  
+//  map_kernel_pages( (uint64_t)KERNBASE + (uint64_t)physbase, (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (10*PAGESIZE)), (uint64_t)physbase, pml4_t );
+  
+//  set_cr3((pml4 *)kernel_cr3);
+//  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)physbase, (pml4 *)kernel_cr3);
+//  print_va_to_pa((uint64_t)KERNBASE, (pml4 *)kernel_cr3);
+  
+  
+
+  while(1);
+
+  
   memset((void *) pml4_t, 0, PAGESIZE);
   int a = 0;
   kprintf("End is %p\n", end);
   kprintf("Value in pml4_t %p\n", *pml4_t);
-  //kprintf("pml4_t = %p\n", pml4_t);
-  //while(1);
+  kprintf("Value of pml4_t %p\n", (uint64_t)pml4_t);
+  virtual_pml4_t = (uint64_t *)((uint64_t)pml4_t + (uint64_t)KERNBASE);
+  kprintf("kernbase = %p\n", (uint64_t)KERNBASE);
+  kprintf("Value in virtual_pml4_t %p\n", virtual_pml4_t);
+  virtual_pml4_t[511] = ((uint64_t)pml4_t | 0x7);
+  kprintf("value at [511] = %p\n", virtual_pml4_t[511]);
+
+
   // identity mapping the pages between physbase and end in a 1:1 mapping starting from KERNBASE
-  map_kernel(KERNBASE + (uint64_t)physbase, KERNBASE + (uint64_t)end, (uint64_t) physbase ,pml4_t);
+  map_kernel((uint64_t)KERNBASE + (uint64_t)physbase, (uint64_t)KERNBASE + (uint64_t)end, (uint64_t) physbase ,virtual_pml4_t);
   // mappinng the video memory to point to changed addresses
-  map_video_mem(KERNBASE + (uint64_t)0xb8000 , (uint64_t)0xb8000 , pml4_t);
+  map_video_mem((uint64_t)KERNBASE + (uint64_t)0xb8000 , (uint64_t)0xb8000 , virtual_pml4_t);
 
   //map_kernel((uint64_t)&_binary_tarfs_start, (uint64_t)&_binary_tarfs_end, (uint64_t)&_binary_tarfs_start - KERNBASE,pml4_t);
   //map_kernel((uint64_t)&a, PAGESIZE + (uint64_t)&a, (uint64_t)&a - KERNBASE ,pml4_t);
   
-  print_va_to_pa(KERNBASE + (uint64_t)0x201230 ,pml4_t);
-  print_va_to_pa((uint64_t)&a, pml4_t);
+  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)0x201230 ,virtual_pml4_t);
+  print_va_to_pa((uint64_t)&a, virtual_pml4_t);
+  print_va_to_pa((uint64_t)0xfffffffffffff000, virtual_pml4_t);
   //print_va_to_pa((uint64_t)&_binary_tarfs_start, pml4_t);
   //pml4* new_pml = (pml4 *)(KERNBASE + (uint64_t)pml4_t);
 
@@ -124,10 +194,12 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //kprintf("pml4_t = %p\n", pml4_t);
   
   set_cr3(pml4_t);
+
   setNewVideoCardAddresses();
   //setNewTarfsAddress();
   kprintf("After loading cr3\n");
 
+  
   init_gdt();
   idt_install();
   init_idt();
@@ -135,6 +207,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
   p1 = (pcb*)kmalloc(sizeof(pcb));
   p2 = (pcb*)kmalloc(sizeof(pcb));
+  kprintf("p1 = %p\n", &p1);
+  kprintf("p2 = %p\n", &p2);
+  while(1);
   void (*f_ptr)() = &kthread2;
   p2->kstack[127] = (uint64_t)f_ptr;
   p2->rsp = (uint64_t)(&p2->kstack[112]);
@@ -160,7 +235,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   //get_file_content("/rootfs/lib/libc.a");
   //kprintf("returned to main\n");
   
-  
+
+  //for thr first user process:
+  /*
   char *filename = "bin/sbush";
   Elf64_Ehdr *p = get_elf(filename);
   kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
@@ -183,10 +260,11 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   kprintf("count = %d\n", count);
   void *q = (void *)p->e_entry;
   kprintf("value at start address = %p\n", q);
-  ring_3_switch((uint64_t)q);
+  //ring_3_switch((uint64_t)q);
   kprintf("after switch to ring 3\n");
 
-
+  kprintf("End is %p\n", end);
+  */
   /*
   Elf64_Ehdr *q = get_elf("lib/crt1.o");
   kprintf("\nreturned to main %x%c\n", q->e_ident[0], q->e_ident[1]);
