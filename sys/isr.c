@@ -129,6 +129,9 @@ void fault_handler(registers r)
     else if (r.int_no < 32)
     {
         kprintf("%s", exception_messages[r.int_no]);
+        if (r.int_no == 13) {
+          kprintf("cr2 = %p\n", get_cr2());
+        }
         kprintf(" Exception. System Halted!\n");
 
         //for (;;);

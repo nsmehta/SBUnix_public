@@ -9,12 +9,13 @@ typedef struct pcb{
   uint64_t pid;
   uint64_t rsp;
   uint64_t cr3;
-  struct mm_struct mm;
+  struct mm_struct *mm;
   enum {RUNNING, SLEEPING, ZOMBIE} state;
   int exit_status;
 }pcb;
 
 void kthread1();
 void switch_to(pcb*, pcb*);
+void first_user_process(pml4 *);
 
 #endif

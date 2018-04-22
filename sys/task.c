@@ -1,5 +1,7 @@
-#include<sys/task.h>
-#include<sys/kprintf.h>
+#include <sys/task.h>
+#include <sys/kprintf.h>
+#include <sys/elf64.h>
+#include <sys/paging.h>
 
 void kthread1(){
   kprintf("In thread 1\n");
@@ -8,6 +10,7 @@ void kthread1(){
 /*movq label, %%rax;\
 pushq %%rax;\*/
 
+// context switching:
 void switch_to(pcb *p1, pcb *p2){
   __asm__ volatile(
     "\
@@ -99,3 +102,42 @@ popq %%rdx;\
 popq %%rcx;\
 popq %%rbx;\
 popq %%rax;\*/
+
+
+void first_user_process(pml4 *kernel_pml4_t){
+
+  char *filename = "bin/sbush";
+  Elf64_Ehdr *p = get_elf(filename);
+  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+  int result = validate_elf_header(p);
+  kprintf("result = %d\n", result);
+  result = check_elf_loadable(p);
+  kprintf("elf loadable = %d\n", result);
+  struct mm_struct *head = NULL;
+  if(result) {
+    head = load_elf_vmas(p);
+  }
+  kprintf("mm_struct = %p\n", head->mmap->vm_start);
+  int count = 0;
+  struct vm_area_struct *temp = head->mmap;
+  while(temp != NULL){
+    kprintf("vm_start = %d\n", temp->vm_type);
+    temp = temp->vm_next;
+    count++;
+  }
+  kprintf("count = %d\n", count);
+  void *q = (void *)p->e_entry;
+  kprintf("value at start address = %p\n", q);
+
+  pcb *process_1 = (pcb *)kmalloc(sizeof(pcb));
+  process_1->mm = head;
+  process_1->pid = 1;
+
+  /*  pml4 *process_pml4 = (pml4 *)kmalloc(sizeof(pml4)*512);
+  process_pml4_t[511] = kernel_pml4_t[511];
+
+  uint64_t pml4_phy_add = process_pml4 - KERNBASE;
+  process_pml4_t[510] = pml4_phy_add | 0x7;
+  */
+  
+}
