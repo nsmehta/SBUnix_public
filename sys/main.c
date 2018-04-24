@@ -38,6 +38,7 @@ void kthread(){
     kprintf("In thread one\n");
     //a++;
     count += 1;
+    set_cr3((uint64_t *)p2->cr3);
     switch_to(p1, p2);
     count += 1;
     if(count >= 2) {
@@ -57,6 +58,7 @@ void kthread2(){
   //int count = 0;
   while(1){
     kprintf("In thread two.\n");
+    set_cr3((uint64_t *)p1->cr3);
     switch_to(p2, p1);
     count += 1;
     //if(count >= 2) {
@@ -212,12 +214,25 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
   p1 = (pcb*)kmalloc(sizeof(pcb));
   p2 = (pcb*)kmalloc(sizeof(pcb));
-  kprintf("p1 = %p\n", &p1);
+  kprintf("p1 = %p, %p\n", &p1);
   kprintf("p2 = %p\n", &p2);
 //  while(1);
   void (*f_ptr)() = &kthread2;
+  kprintf("&kthread2 = %p\n", (uint64_t)f_ptr);
   p2->kstack[127] = (uint64_t)f_ptr;
-  p2->rsp = (uint64_t)(&p2->kstack[112]);
+  p2->rsp = (uint64_t)(&p2->kstack[127]);
+  
+  p1->cr3 = get_next_free_page_kmalloc();
+  p2->cr3 = get_next_free_page_kmalloc();
+  
+  create_new_kernel_pml4(p1->cr3, pml4_t);
+  create_new_kernel_pml4(p2->cr3, pml4_t);
+  
+//  kprintf("p1 = %p, cr3[511] = %p, [510] = %p\n", p1->cr3, ((uint64_t *)virtual_p1)[511], ((uint64_t *)virtual_p1)[510]);
+//  kprintf("p2 = %p, cr3[511] = %p, [510] = %p\n", p2->cr3, ((uint64_t *)virtual_p2)[511], ((uint64_t *)virtual_p2)[510]);
+  
+//  kprintf("&p2->kstack[127] = %p\n", &p2->kstack[127]);
+//  kprintf("&p2->kstack[112] = %p\n", &p2->kstack[112]);
 
   p2->pid = 1;
   kthread();
@@ -225,6 +240,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   while(1);
 
+  
+  /*
+  ************************************************************************************************************
+  */
   
   memset((void *) pml4_t, 0, (uint64_t)PAGESIZE/(uint64_t)8);
 //  int a = 0;
