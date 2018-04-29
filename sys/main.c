@@ -12,15 +12,29 @@
 #include <sys/keyboard.h>
 #include <sys/idt.h>
 #include <sys/isr.h>
+#include <sys/timer.h>
+#include <sys/schedule.h>
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
+//extern void *user_mode_function;
 pcb *g;
 pcb *p2, *p1;
 int count = 0;
 pml4 *virtual_pml4_t;
+
+void user_mode_function_1() {
+  
+  kprintf("in user function\n");
+
+  while(1) {
+    kprintf("in user mode\n");
+  }
+  
+}
+
 
 void kthread(){
   // kprintf("hello world\n");
@@ -71,6 +85,11 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 {
   initScreen();
 
+  // initialize timer
+  timer_phase(2);
+  
+  
+//  while(1);
 
   //__asm__ __volatile__ ("int $0x21");
   //__asm__ __volatile__ ("int $15");
@@ -160,15 +179,22 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  while(1);
   
   
-  // loaading new value in cr3 register
-    set_cr3((pml4 *)(kernel_cr3));
+  // loading new value in cr3 register
+  set_cr3((pml4 *)(kernel_cr3));
 //  __asm__ __volatile__("movq %0, %%cr3"::"r"(kernel_cr3));
+  
+//  set_tss_rsp((void *) &initial_stack[INITIAL_STACK_SIZE]);
+  
   
   set_new_free_list_head();
   
   setNewVideoCardAddresses();
   kprintf("new cr3 successfully set\n");
-  
+
+  init_gdt();
+  idt_install();
+  init_idt();
+
 //  while(1);
 
 //  uint64_t *b = (uint64_t *)(KERNBASE + 0x349000);
@@ -212,21 +238,21 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  print_va_to_pa((uint64_t)KERNBASE + (uint64_t)physbase, (pml4 *)kernel_cr3);
 //  print_va_to_pa((uint64_t)KERNBASE, (pml4 *)kernel_cr3);
   
-  p1 = (pcb*)kmalloc(sizeof(pcb));
-  p2 = (pcb*)kmalloc(sizeof(pcb));
-  kprintf("p1 = %p, %p\n", &p1);
-  kprintf("p2 = %p\n", &p2);
-//  while(1);
-  void (*f_ptr)() = &kthread2;
-  kprintf("&kthread2 = %p\n", (uint64_t)f_ptr);
-  p2->kstack[127] = (uint64_t)f_ptr;
-  p2->rsp = (uint64_t)(&p2->kstack[127]);
-  
-  p1->cr3 = get_next_free_page_kmalloc();
-  p2->cr3 = get_next_free_page_kmalloc();
-  
-  create_new_kernel_pml4(p1->cr3, pml4_t);
-  create_new_kernel_pml4(p2->cr3, pml4_t);
+//  p1 = (pcb*)kmalloc(sizeof(pcb));
+//  p2 = (pcb*)kmalloc(sizeof(pcb));
+//  kprintf("p1 = %p, %p\n", &p1, (uint64_t)&p1->kstack[127]);
+//  kprintf("p2 = %p\n", &p2);
+////  while(1);
+//  void (*f_ptr)() = &kthread2;
+//  kprintf("&kthread2 = %p\n", (uint64_t)f_ptr);
+//  p2->kstack[127] = (uint64_t)f_ptr;
+//  p2->rsp = (uint64_t)(&p2->kstack[127]);
+//  
+//  p1->cr3 = get_next_free_page_kmalloc();
+//  p2->cr3 = get_next_free_page_kmalloc();
+//  
+//  create_new_kernel_pml4(p1->cr3, pml4_t);
+//  create_new_kernel_pml4(p2->cr3, pml4_t);
   
 //  kprintf("p1 = %p, cr3[511] = %p, [510] = %p\n", p1->cr3, ((uint64_t *)virtual_p1)[511], ((uint64_t *)virtual_p1)[510]);
 //  kprintf("p2 = %p, cr3[511] = %p, [510] = %p\n", p2->cr3, ((uint64_t *)virtual_p2)[511], ((uint64_t *)virtual_p2)[510]);
@@ -234,9 +260,97 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  kprintf("&p2->kstack[127] = %p\n", &p2->kstack[127]);
 //  kprintf("&p2->kstack[112] = %p\n", &p2->kstack[112]);
 
-  p2->pid = 1;
-  kthread();
+//  p2->pid = 1;
+//  kthread();
+  
+//  set_cr3((pml4 *)kernel_cr3);
+  
+//  pcb *up = (pcb *)kmalloc(sizeof(pcb));
+//  kprintf("up = %p, kstack[127] = %p,\n[126] = %p\n", &up, (uint64_t)&up->kstack[127], (uint64_t)&up->kstack[126]);
+//  
+//  up->cr3 = get_next_free_page_kmalloc();
+//  
+//  set_cr3((pml4 *)up->cr3);
+//  
+//  create_new_user_pml4(up->cr3, pml4_t);
+//  
+//  uint64_t *user_stack = (uint64_t *) kmalloc(PAGESIZE);
+//  
+//  
+//  up->kstack[127] = 0x23; // SS
+//  up->kstack[126] = (uint64_t) &user_stack[511]; // RSP
+//  up->kstack[125] = (uint64_t)0x203; // FLAGS
+//  up->kstack[124] = 0x2b; // CS
+//  up->kstack[123] = (uint64_t) &user_mode_function; // RIP
+//  
+//  // setting the TSS RSP to the kernel stack
+//  set_tss_rsp((void *) &(up->kstack[127]));
+//  
+//  up->rsp = (uint64_t) &up->kstack[127];
+  
+//  kprintf("up->rsp = %p, kstack[127] = %p\n", up->rsp, up->kstack[127]);
+  
+//  switch_to_user_mode(up);
+  
+  
+//  char *filename = "bin/sbush";
+//  Elf64_Ehdr *p = get_elf(filename);
+//  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+//  int result = validate_elf_header(p);
+//  kprintf("result = %d\n", result);
+//  result = check_elf_loadable(p);
+//  kprintf("elf loadable = %d\n", result);
+//  struct mm_struct *head = NULL;
+//  if(result) {
+//    head = load_elf_vmas(p);
+//  }
+//  kprintf("mm_struct = %p\n", head->mmap->vm_start);
+//  int count = 0;
+//  struct vm_area_struct *temp = head->mmap;
+//  while(temp != NULL){
+//    kprintf("vm_start = %d\n", temp->vm_type);
+//    temp = temp->vm_next;
+//    count++;
+//  }
+//  kprintf("count = %d\n", count);
+//
+//
+//  struct pcb *first_process = create_process(head);
+//  kprintf("first process = %p\n", (uint64_t)first_process);
+  
+/*  uint64_t flags = 0x0;
+  
+  __asm__ volatile(
+  "\
+    pushfq;\
+    popq  %0;\
+  "
+  :"=r" (flags)
+  :
+  );
+  
+  first_process_switch(first_process, (uint64_t) &user_mode_function_1, 0x200202);
+  __asm__ __volatile__ ("sti");
+*/
+  
+//  for(uint64_t i = 0; i < 100000; i++) {
+//    for(uint64_t j = 0; j < 10000; j++) {
+//      
+//    }
+//  }
+  
+//  user_mode_function_1();
+  
+  struct pcb *dummy_process = (struct pcb *)create_dummy_process();
+//  
+  scheduler_init();
+  schedule_idle_process(dummy_process, (uint64_t) &user_mode_function_1);
+  
+  
 
+  kprintf("in main\n");
+  __asm__ __volatile__ ("sti");
+  
 
   while(1);
 

@@ -36,3 +36,9 @@ _x86_64_asm_lgdt:
 _x86_64_asm_ltr:
   ltr %di
   retq
+
+.global tss_flush
+tss_flush:
+  mov $0x33 , %ax
+  ltr %ax
+  retq

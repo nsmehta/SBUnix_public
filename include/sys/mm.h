@@ -28,12 +28,15 @@ struct mm_struct {
   uint64_t total_vm; // total no of pages
   uint64_t locked_vm; // no of locked pages
   uint64_t flags; // status flags
+  uint64_t *elf_head;
+  uint64_t e_entry;
 };
 
 struct vm_area_struct {
   struct mm_struct *vm_mm; /* associated mm_struct */
   unsigned long vm_start; /* VMA start, inclusive */
   unsigned long vm_end; /* VMA end , exclusive */
+  unsigned long vm_offset; /* VMA p_offset */
   struct vm_area_struct *vm_next; /* list of VMA's */
   int vm_type;
   uint64_t vm_file; /* mapped file, if any */

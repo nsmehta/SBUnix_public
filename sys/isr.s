@@ -277,14 +277,67 @@ isr31:
 	jmp isr_common_stub
 
 
-	# 32: Stack Fault Exception
-	irq0:
+	# 32: Dummy timer
+	irqx:
 	  cli
 	  pushq $0 		# dummy error code
 	  pushq $32 		# irq number
 	  jmp irq_common_stub
 
-	# 33: General Protection Fault Exception
+
+
+	# 32: Timer
+	irq0:
+    cli
+    # push all the registers
+    pushq %rdi
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rbp
+    pushq %rsi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+	  # pushq $0 		# dummy error code
+	  # pushq $32 		# irq number
+
+    movq %rsp, %rdi
+    callq generate_timer
+
+    # pop the error code and irq number
+    # popq %rax
+    # popq %rax
+  
+    # pop all the registers
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rsi
+    popq %rbp
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+    popq %rdi
+
+    sti
+    iretq
+
+
+	# 33: Keyboard
 	irq1:
 	  cli
 	  pushq $0 		# dummy error code
@@ -448,6 +501,7 @@ isr_common_stub:
 
 
 .extern irq_handler
+.extern generate_timer
 # IRQ common stub. It saves processor state, sets up for kernel mode segments
 # calls the C-level fault handler, and finally restores the stack frame.
 
@@ -494,3 +548,47 @@ irq_common_stub:
   add $0x10, %rsp
   sti
   iretq
+
+
+timer_interrupt:
+  cli
+  pushq %rsi
+  pushq %rdi
+  pushq %rbp
+  pushq %rax
+  pushq %rbx
+  pushq %rcx
+  pushq %rdx
+  pushq %r8
+  pushq %r9
+  pushq %r10
+  pushq %r11
+  pushq %r12
+  pushq %r13
+  pushq %r14
+  pushq %r15
+  
+  movq %rsp, %rdi
+  callq generate_timer
+  
+  popq %r15
+  popq %r14
+  popq %r13
+  popq %r12
+  popq %r11
+  popq %r10
+  popq %r9
+  popq %r8
+  popq %rdx
+  popq %rcx
+  popq %rbx
+  popq %rax
+  popq %rbp
+  popq %rdi
+  popq %rsi
+  
+  sti
+  iretq
+
+  
+  

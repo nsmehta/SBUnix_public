@@ -33,6 +33,7 @@
 
 uint64_t kernel_cr3;
 uint64_t top_virtual_address;
+uint64_t *kernel_pml4_t;
 
 typedef struct Page{
   struct Page *next;
@@ -76,6 +77,7 @@ uint64_t to_physical(uint64_t vir_add);
 
 void set_top_virtual_address(uint64_t v_addr);
 uint64_t kmalloc(size_t size);
+uint64_t kmalloc_user(size_t size);
 int page_walk(uint64_t p_addr, uint64_t v_addr);
 uint64_t get_next_free_page_kmalloc();
 void set_new_free_list_head();
@@ -87,5 +89,10 @@ void initialize_free_list();
 void append_free_list(uint64_t start, uint64_t end, uint64_t physfree);
 void set_free_list_head();
 uint64_t round_up(uint64_t addr);
+uint64_t create_new_kernel_pml4(uint64_t p_addr, uint64_t* pml4_t);
+uint64_t create_new_user_pml4(uint64_t p_addr, uint64_t* pml4_t);
+int page_walk_user(uint64_t p_addr, uint64_t v_addr);
+uint64_t kmalloc_top_virtual_address_kernel(size_t size, uint64_t top_virtual_address);
+uint64_t kmalloc_top_virtual_address_user(size_t size, uint64_t top_virtual_address);
 
 #endif

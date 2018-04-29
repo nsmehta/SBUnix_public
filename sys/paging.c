@@ -316,7 +316,7 @@ uint64_t *create_kernel_pml4() {
 
   // CR3 register contains the physical address of the base address of the page directory table
   kernel_cr3 = pml4_t;
-  kprintf("kernel cr3 = %p\n", kernel_cr3);
+//  kprintf("kernel cr3 = %p\n", kernel_cr3);
   
   // kernel pml4 will have a virtual address
   uint64_t *kernel_pml4 = (uint64_t *)(pml4_t + KERNBASE);
@@ -326,7 +326,7 @@ uint64_t *create_kernel_pml4() {
   kernel_pml4_t = kernel_pml4;
 //  kernel_pml4[510] = kernel_cr3 | PAGE_KERNEL;
   
-  kprintf("kernel pml4 = %p, kernel_pml4[511] = %p\n", kernel_pml4, kernel_pml4[511]);
+//  kprintf("kernel pml4 = %p, kernel_pml4[511] = %p\n", kernel_pml4, kernel_pml4[511]);
   return kernel_pml4;
 }
 
@@ -452,6 +452,123 @@ uint64_t kmalloc(size_t size) {
   
 }
 
+// kmalloc for user processes
+uint64_t kmalloc_user(size_t size) {
+  
+  uint64_t no_of_pages = 0;
+  
+  if (size % (uint64_t)PAGESIZE != 0) {
+    no_of_pages = (size / (uint64_t)PAGESIZE) + 1;
+  } else {
+    no_of_pages = (size / (uint64_t)PAGESIZE);
+  }
+  no_of_pages++;
+  
+  uint64_t top = top_virtual_address;
+  uint64_t v_addr = top;
+  
+
+  for(uint64_t i = 0; i < no_of_pages; i++) {
+
+    uint64_t p_addr = get_next_free_page_kmalloc();
+    if (p_addr == 0) {
+      kprintf("no free pages left! %p\n", i);
+      return 0;
+    }
+    kprintf("next free = %p\n", p_addr);
+
+    int result = page_walk_user(p_addr, v_addr);
+
+    if (result == 0) {
+      kprintf("kmalloc failed! i = %p\n", i);
+      return 0;
+    }
+    v_addr += (uint64_t)PAGESIZE;
+    top_virtual_address += (uint64_t)PAGESIZE;
+  }
+  
+  return top;
+  
+}
+
+
+// Kmalloc for a different top virtual address:
+uint64_t kmalloc_top_virtual_address_kernel(size_t size, uint64_t top_virtual_address) {
+  
+  uint64_t no_of_pages = 0;
+  
+  if (size % (uint64_t)PAGESIZE != 0) {
+    no_of_pages = (size / (uint64_t)PAGESIZE) + 1;
+  } else {
+    no_of_pages = (size / (uint64_t)PAGESIZE);
+  }
+  
+  uint64_t top = top_virtual_address;
+  uint64_t v_addr = top;
+  
+
+  for(uint64_t i = 0; i < no_of_pages; i++) {
+
+    uint64_t p_addr = get_next_free_page_kmalloc();
+    if (p_addr == 0) {
+      kprintf("no free pages left! %p\n", i);
+      return 0;
+    }
+    kprintf("next free = %p\n", p_addr);
+
+    int result = page_walk(p_addr, v_addr);
+
+    if (result == 0) {
+      kprintf("kmalloc failed! i = %p\n", i);
+      return 0;
+    }
+    v_addr += (uint64_t)PAGESIZE;
+    top_virtual_address += (uint64_t)PAGESIZE;
+  }
+  
+  return top;  
+  
+}
+
+
+// Kmalloc for a different top virtual address:
+uint64_t kmalloc_top_virtual_address_user(size_t size, uint64_t top_virtual_address) {
+  
+  uint64_t no_of_pages = 0;
+  
+  if (size % (uint64_t)PAGESIZE != 0) {
+    no_of_pages = (size / (uint64_t)PAGESIZE) + 1;
+  } else {
+    no_of_pages = (size / (uint64_t)PAGESIZE);
+  }
+  
+  uint64_t top = top_virtual_address;
+  uint64_t v_addr = top;
+  
+
+  for(uint64_t i = 0; i < no_of_pages; i++) {
+
+    uint64_t p_addr = get_next_free_page_kmalloc();
+    if (p_addr == 0) {
+      kprintf("no free pages left! %p\n", i);
+      return 0;
+    }
+    kprintf("next free = %p\n", p_addr);
+
+    int result = page_walk_user(p_addr, v_addr);
+
+    if (result == 0) {
+      kprintf("kmalloc failed! i = %p\n", i);
+      return 0;
+    }
+    v_addr += (uint64_t)PAGESIZE;
+    top_virtual_address += (uint64_t)PAGESIZE;
+  }
+  
+  return top;  
+  
+}
+
 
 // page walks the virtual address and maps the allocated physical address
 int page_walk(uint64_t p_addr, uint64_t v_addr) {
@@ -467,11 +584,11 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
   
   
 
-  kprintf("cr3 = %p\n", kernel_cr3);
+//  kprintf("cr3 = %p\n", kernel_cr3);
 
-  kprintf("pml4_rec_addr = %p, *pml4_rec_addr = %p\nvalue = %p\n", (uint64_t)pml4_rec_addr, *pml4_rec_addr, (uint64_t)pml4_rec_addr);
+//  kprintf("pml4_rec_addr = %p, *pml4_rec_addr = %p\nvalue = %p\n", (uint64_t)pml4_rec_addr, *pml4_rec_addr, (uint64_t)pml4_rec_addr);
 
-  kprintf("pml4 = %p, v_addr = %p, \nvalue = %p, p_addr = %p\n", pml4_rec_addr, v_addr, *pml4_rec_addr, p_addr);
+//  kprintf("pml4 = %p, v_addr = %p, \nvalue = %p, p_addr = %p\n", pml4_rec_addr, v_addr, *pml4_rec_addr, p_addr);
 
   if (is_valid_page((uint64_t) *pml4_rec_addr)) {
 
@@ -480,7 +597,7 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
 
       if (is_valid_page((uint64_t) *pgd_rec_addr)) {
         
-        kprintf("pte = %p\n", pte_rec_addr);
+//        kprintf("pte = %p\n", pte_rec_addr);
 
         
         if(is_valid_page((uint64_t) *pte_rec_addr)) {
@@ -490,7 +607,7 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
           return 0;
           
         } else {
-          kprintf("invalid pte! = %p\n", (uint64_t) *pte_rec_addr);
+//          kprintf("invalid pte! = %p\n", (uint64_t) *pte_rec_addr);
 
           *pte_rec_addr = p_addr | PAGE_KERNEL;
           return 1;
@@ -547,6 +664,100 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
 }
 
 
+// page walks the virtual address and maps the allocated physical address for user processes
+int page_walk_user(uint64_t p_addr, uint64_t v_addr) {
+  uint64_t pml4_part = (v_addr & (uint64_t)PML4_OFFSET) >> 36;
+  uint64_t pdpe_part = (v_addr & (uint64_t)PDPE_OFFSET) >> 27;
+  uint64_t pgd_part = (v_addr & (uint64_t)PGD_OFFSET) >> 18;
+  uint64_t pte_part = (v_addr & (uint64_t)PTE_OFFSET) >> 9;
+  
+  uint64_t *pml4_rec_addr = (uint64_t *) (pml4_part | (uint64_t)PML4_PT_WALK);
+  uint64_t *pdpe_rec_addr = (uint64_t *) (pdpe_part | (uint64_t)PDPE_PT_WALK);
+  uint64_t *pgd_rec_addr = (uint64_t *) (pgd_part | (uint64_t)PGD_PT_WALK);
+  uint64_t *pte_rec_addr = (uint64_t *) (pte_part | (uint64_t)PTE_PT_WALK);
+  
+  
+
+//  kprintf("cr3 = %p\n", kernel_cr3);
+
+//  kprintf("pml4_rec_addr = %p, *pml4_rec_addr = %p\nvalue = %p\n", (uint64_t)pml4_rec_addr, *pml4_rec_addr, (uint64_t)pml4_rec_addr);
+
+//  kprintf("pml4 = %p, v_addr = %p, \nvalue = %p, p_addr = %p\n", pml4_rec_addr, v_addr, *pml4_rec_addr, p_addr);
+
+  if (is_valid_page((uint64_t) *pml4_rec_addr)) {
+
+    if (is_valid_page((uint64_t) *pdpe_rec_addr)) {
+      
+
+      if (is_valid_page((uint64_t) *pgd_rec_addr)) {
+        
+//        kprintf("pte = %p\n", pte_rec_addr);
+
+        
+        if(is_valid_page((uint64_t) *pte_rec_addr)) {
+          
+          kprintf("valid pte! = %p\n", (uint64_t) *pte_rec_addr);
+          // the virtual page is already mapped! we will need to free the physical page and return 0
+          return 0;
+          
+        } else {
+//          kprintf("invalid pte! = %p\n", (uint64_t) *pte_rec_addr);
+
+          *pte_rec_addr = p_addr | PAGE_USER;
+          return 1;
+
+        }
+        
+      } else {
+      
+
+        uint64_t physical_page = get_next_free_page_kmalloc();
+
+        *pgd_rec_addr = physical_page | PAGE_USER;
+
+        *pte_rec_addr = p_addr | PAGE_USER;
+
+        return 1;
+        
+      }
+      
+    } else {
+    
+
+      uint64_t physical_page = get_next_free_page_kmalloc();
+      *pdpe_rec_addr = physical_page | PAGE_USER;
+      physical_page = get_next_free_page_kmalloc();
+      *pgd_rec_addr = physical_page | PAGE_USER;
+
+      *pte_rec_addr = p_addr | PAGE_USER;
+      return 1;
+
+    }
+    
+  } else {
+    
+    kprintf("not valid pml4\n");
+
+    uint64_t physical_page = get_next_free_page_kmalloc();
+
+    *pml4_rec_addr = physical_page | PAGE_USER;
+
+    physical_page = get_next_free_page_kmalloc();
+
+    *pdpe_rec_addr = physical_page | PAGE_USER;
+    physical_page = get_next_free_page_kmalloc();
+
+    *pgd_rec_addr = physical_page | PAGE_USER;
+
+    *pte_rec_addr = p_addr | PAGE_USER;
+
+    return 1;
+
+  }
+
+}
+
+
 uint64_t create_new_kernel_pml4(uint64_t p_addr, uint64_t* pml4_t) {
   
   uint64_t top = top_virtual_address;
@@ -569,16 +780,38 @@ uint64_t create_new_kernel_pml4(uint64_t p_addr, uint64_t* pml4_t) {
 
 }
 
+uint64_t create_new_user_pml4(uint64_t p_addr, uint64_t* pml4_t) {
+  
+  uint64_t top = top_virtual_address;
+  uint64_t* v_addr = (uint64_t *)top;
+  
+
+  int result = page_walk_user(p_addr, (uint64_t)v_addr);
+
+  if (result == 0) {
+    kprintf("kmalloc failed!\n");
+    return 0;
+  }
+  top_virtual_address += (uint64_t)PAGESIZE;
+  
+  v_addr[511] = kernel_pml4_t[511];
+  v_addr[510] = p_addr | PAGE_USER;
+  
+
+  return (uint64_t)v_addr;
+
+}
+
 void map_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p_addr, pml4 *kernel_pml4) {
   
   uint64_t current_v_addr, current_p_addr;
-  int count = 0;
+//  int count = 0;
   
   for(current_v_addr = v_addr_start, current_p_addr = p_addr; current_v_addr < (v_addr_start + 10*(uint64_t)PAGESIZE); current_v_addr += (uint64_t)PAGESIZE, current_p_addr += (uint64_t)PAGESIZE) {
     map_kernel_page(current_v_addr, current_p_addr, kernel_pml4);
-    kprintf("mapped 1 page\ncurrent_v_addr = %p\n", current_v_addr);
+//    kprintf("mapped 1 page\ncurrent_v_addr = %p\n", current_v_addr);
   }
-  kprintf("count = %d\n", count);
+//  kprintf("count = %d\n", count);
   
 }
 
@@ -625,7 +858,7 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
         
         
         *offset_in_pg_t = p_addr | PAGE_KERNEL;
-        kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
+//        kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
 
 //        count = 0;
         
@@ -641,7 +874,7 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
         uint64_t *offset_in_pg_t = (uint64_t *)(pg_table + pgt_offset);
 
         *offset_in_pg_t = p_addr | PAGE_KERNEL;
-        kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
+//        kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
 
       }
     }
@@ -663,20 +896,19 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
 
       *offset_in_pg_t = p_addr | PAGE_KERNEL;
       
-      kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
+//      kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
 
     }
   }
   else {
-    kprintf("pdp not valid\n");
+//    kprintf("pdp not valid\n");
     // create pdp table and entry in pml4
     uint64_t pdp_table_physical = get_next_free_page();
     uint64_t pdp_table = (pdp_table_physical + KERNBASE);
 //    *offset_in_pml4_t = pdp_table | PAGE_KERNEL;
-    kprintf("offset_in_pml4_t = %p\n", offset_in_pml4_t);
-    return;
+//    kprintf("offset_in_pml4_t = %p\n", offset_in_pml4_t);
     
-    kprintf("created offset_in_pml4_t\n");
+//    kprintf("created offset_in_pml4_t\n");
     
     // create pgd table and entry in pdp
     uint64_t pgd_table_physical = get_next_free_page();
@@ -684,7 +916,7 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
     uint64_t *offset_in_pdp_t = (uint64_t *) (pdp_table + pdpt_offset);
     *offset_in_pdp_t = pgd_table | PAGE_KERNEL;
     
-    kprintf("created pdg table\n");
+//    kprintf("created pdg table\n");
     
     // create page table and offset in pgd
     uint64_t pg_table_physical = get_next_free_page();
@@ -692,17 +924,17 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
     uint64_t *offset_in_pgd_t = (uint64_t *)(pgd_table + pgd_offset);
     *offset_in_pgd_t = pg_table | PAGE_KERNEL;
     
-    kprintf("created the page table\n");
+//    kprintf("created the page table\n");
 
     // this is the physical page mapping
     uint64_t *offset_in_pg_t = (uint64_t *)(pg_table + pgt_offset);
     
-    kprintf("created offset in pg table\n");
+//    kprintf("created offset in pg table\n");
 
     *offset_in_pg_t = p_addr | PAGE_KERNEL;
-    kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
+//    kprintf("virtual = %p, physical = %p\n", offset_in_pg_t, p_addr);
 
-    kprintf("wrote to offset in page table\n");
+//    kprintf("wrote to offset in page table\n");
 //    return;
 
   }

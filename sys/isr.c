@@ -5,6 +5,10 @@
 #include <sys/io.h>
 #include <sys/keyboard.h>
 #include <sys/paging.h>
+#include <sys/timer.h>
+#include <sys/task.h>
+#include <sys/gdt.h>
+#include <sys/schedule.h>
 
 /* from http://www.osdever.net/bkerndev/Docs/isrs.htm */
 
@@ -128,13 +132,13 @@ void fault_handler(registers r)
     
     else if (r.int_no < 32)
     {
-        kprintf("%s", exception_messages[r.int_no]);
+        kprintf("%s\n", exception_messages[r.int_no]);
         if (r.int_no == 13) {
           kprintf("cr2 = %p\n", get_cr2());
         }
         kprintf(" Exception. System Halted!\n");
 
-        //for (;;);
+        for (;;);
 	}
     //for (;;);
     outb(0x20, 0x20);
@@ -161,4 +165,132 @@ void irq_handler(registers r)
 
     // send reset signal to master
     outb(0x20, 0x20);
+}
+
+/* source: http://www.osdever.net/bkerndev/Docs/pit.htm */
+void timer_phase(int frequency) {
+  
+  int divisor = 1193180 / frequency;
+  outb(0x43, 0x36);
+  outb(0x40, divisor & 0xff);
+  outb(0x40, divisor >> 8);
+  
+  timer_ticks = 0;
+  
+}
+
+void user_mode_function() {
+  while(1) {
+   kprintf("in user mode\n"); 
+  }
+}
+
+
+void generate_timer() {
+  
+  timer_ticks++;
+//  kprintf("scene kya hai ?\n");
+  if (timer_ticks == 180) {
+    kprintf("timer !\n");
+    timer_ticks = 0;
+    
+    if(ready_processes == NULL) {
+      
+      // run idle process:
+//      uint64_t old_cr3 = get_cr3();
+//      kprintf("old cr3 = %p\n", old_cr3);
+      uint64_t *old_rsp;
+//      uint64_t *new_rsp = (uint64_t *)idle_process->rsp;
+//      kprintf("new rsp = %p\n", new_rsp);
+      
+      __asm__ volatile (
+        "movq %%rsp, %0;"
+        :"=r"(old_rsp)
+        :
+      );
+      
+      
+//      kprintf("old rsp = %p\n", old_rsp);
+//      kprintf("before set cr3\n");
+      set_cr3((uint64_t *)idle_process->cr3);
+//      kprintf("after set cr3:  %p\n",get_cr3());
+      
+      //set new rsp
+      __asm__ volatile(
+        "movq %0, %%rsp;"
+        :
+        : "m" (idle_process->rsp)
+      );
+      ready_processes = idle_process;
+      
+//      kprintf("after load rsp\n");
+    }
+  /*
+  
+  struct pcb *process = (struct pcb *)kmalloc(sizeof(struct pcb));
+  kprintf("first process = %p\n", (uint64_t)process);
+  
+  uint64_t flags = 0x0;
+  
+  __asm__ volatile(
+  "\
+    pushfq;\
+    popq  %0;\
+  "
+  :"=r" (flags)
+  :
+  );
+  
+  kprintf("flags = %p\n", flags);
+
+  
+  
+  uint64_t rip = (uint64_t)&user_mode_function;
+  process->pstack = (uint64_t *) kmalloc(PAGESIZE);
+  
+  process->kstack[127] = 0x23;
+  process->kstack[126] = process->pstack[511];
+  process->kstack[125] = flags | 0x200;
+  process->kstack[124] = 0x2b;
+  process->kstack[123] = rip;
+  
+  process->kstack[123 - 15] = (uint64_t)irq0 + 0x20;
+  
+  process->rsp = (uint64_t) &process->kstack[123 - 16];
+  
+  process->cr3 = get_next_free_page_kmalloc();
+  kprintf("cr3 = %p\n", process->cr3);
+  
+  create_new_user_pml4(process->cr3, kernel_pml4_t);
+  
+  // load the new process's cr3
+  set_cr3((uint64_t *)process->cr3);
+  
+  // set new process's rsp
+  __asm__ volatile(
+  "\
+    movq %0, %%rsp;\
+  "
+  :
+  : "r" (process->rsp)
+  );
+  
+  set_tss_rsp((void *)((uint64_t)&process->kstack[127]));
+  
+  __asm__ volatile(
+  "\
+   movq $0x23, %rax;\
+   movq %rax, %ds;\
+   movq %rax, %es;\
+   movq %rax, %fs;\
+   movq %rax, %gs;\
+  "
+  );
+
+  */
+  }
+  
+  // send reset signal to master
+  outb(0x20, 0x20);
+
 }

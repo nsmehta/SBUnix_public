@@ -7,7 +7,7 @@ static struct idt_t idt[256];
 
 static struct idtr_t idtr;
 
-// idt_set_gate(0, (uint64_t)&isr0, 0x08, 0, 0x0e, 0, 1);
+// idt_set_gate(0, (uint64_t)&isr0, 0x08, 0, 0x8e, 0, 1);
 
 void idt_set_gate(int index, uint64_t offset, uint16_t selector, uint16_t ist, int16_t type, uint16_t dpl, uint16_t p) {
   idt[index].low_offset = offset & 0xffff;
@@ -80,7 +80,7 @@ void idt_install() {
 	// }
 
 
-  __asm__ __volatile__ ("sti");
+  //__asm__ __volatile__ ("sti");
   /*load idt table*/
   _x86_64_asm_lidt(&idtr);
 

@@ -70,6 +70,7 @@ static struct tss_t tss;
 
 void _x86_64_asm_lgdt(struct gdtr_t *gdtr, uint64_t cs_idx, uint64_t ds_idx);
 void _x86_64_asm_ltr(uint64_t tss_idx);
+void tss_flush();
 void init_gdt() {
   struct sys_segment_descriptor *sd = (struct sys_segment_descriptor*)&gdt[6]; // 7th&8th entry in GDT
   sd->sd_lolimit = sizeof(struct tss_t) - 1;
@@ -79,12 +80,14 @@ void init_gdt() {
   sd->sd_p = 1;
   sd->sd_hilimit = 0;
   sd->sd_gran = 0;
+  
   sd->sd_hibase = ((uint64_t)&tss) >> 24;
 
   _x86_64_asm_lgdt(&gdtr, 8, 16);
   //_x86_64_asm_ltr(0x30);
   // user permission
-  _x86_64_asm_ltr(0x33);
+   tss_flush();
+//  _x86_64_asm_ltr(0x33);
 }
 
 void set_tss_rsp(void *rsp) {

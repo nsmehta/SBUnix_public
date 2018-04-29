@@ -2,6 +2,10 @@
 #include <sys/kprintf.h>
 #include <sys/elf64.h>
 #include <sys/paging.h>
+#include <sys/gdt.h>
+
+
+extern void irq0();
 
 void kthread1(){
   kprintf("In thread 1\n");
@@ -9,6 +13,53 @@ void kthread1(){
 
 /*movq label, %%rax;\
 pushq %%rax;\*/
+
+/*source: http://www.jamesmolloy.co.uk/tutorial_html/10.-User%20Mode.html*/
+
+void switch_to_user_mode(pcb *p1) {
+
+  __asm__ volatile(
+    "\
+      cli;\
+      movq $0x23, %%rax;\
+      movq %%rax, %%ds;\
+      movq %%rax, %%es;\
+      movq %%rax, %%fs;\
+      movq %%rax, %%gs;\
+      movq %%rsp, %%rax;\
+      pushq $0x23;\
+      pushq %%rax;\
+      pushfq;\
+      popq %%rax;\
+      or $0x200, %%rax;\
+      pushq %%rax;\
+      pushq $0x2b;\
+      pushq %0;\
+      iretq;\
+    "
+    :
+    :"m" (p1->rsp)
+  );
+  
+  /*__asm__ volatile(
+    "\
+      movq %0, %%rsp\
+    "
+    :
+    :"m" (p1->rsp)
+  );*/
+  kprintf("Value in rsp p1 is %p\n", p1->rsp);
+
+/*  __asm__ volatile(
+    "\
+      iretq;\
+    "
+  );*/
+
+  __asm__ volatile("2:");
+
+  
+}
 
 // context switching:
 void switch_to(pcb *p1, pcb *p2){
@@ -153,3 +204,153 @@ void first_user_process(pml4 *kernel_pml4_t){
   */
   
 }
+
+
+struct pcb *create_process(struct mm_struct *head) {
+  
+  struct pcb* new_process = (struct pcb *)kmalloc(sizeof(pcb));
+  
+  memset((void *)new_process, 0, (uint64_t)sizeof(pcb) / (uint64_t)8);
+  
+//  uint64_t process_cr3 = get_next_free_page_kmalloc();
+//  
+//  create_new_user_pml4(process_cr3, kernel_pml4_t);
+//  
+//  uint64_t old_cr3 = get_cr3();
+  
+//  new_process->e_entry = head->e_entry;
+  
+//  struct vm_area_struct *temp = head->mmap;
+  /*while(temp != NULL){
+    if (temp->vm_type == TYPE_FILE) {
+      set_cr3((uint64_t *)process_cr3);
+      
+      uint64_t vm_start = temp->vm_start;
+      uint64_t vm_size = temp->vm_end - vm_start;
+      
+      kmalloc_top_virtual_address_user(vm_size, vm_start);
+      
+      //Copy values from p_offset to the virtual address vm_start in the current paging structure
+      uint8_t *address = (uint8_t *)vm_start;
+      uint8_t *offset = (uint8_t *)head->elf_head + temp->vm_offset;
+      
+      //Copy values from p_offset to the virtual address vm_start in the current paging structure
+      for(uint64_t i = 0; i< vm_size; i++) {
+        *address = *offset;
+        address++;
+        offset++;
+      }
+      
+      set_cr3((uint64_t *)old_cr3);
+    }
+    kprintf("vm_start = %d\n", temp->vm_type);
+    temp = temp->vm_next;
+//    count++;
+  }*/
+
+//  uint64_t *new_stack = kmalloc(PAGESIZE);
+  return new_process;
+  
+}
+
+
+pcb *create_dummy_process() {
+  
+  kprintf("in dummy process\n");
+  pcb* new_process = (pcb *)kmalloc_user(sizeof(pcb));
+  
+  memset((void *)new_process, 0, (uint64_t)sizeof(pcb) / (uint64_t)8);
+  
+  new_process->pstack = NULL;
+  new_process->pid = (uint64_t) NULL;
+  new_process->rsp = (uint64_t) NULL;
+  new_process->cr3 = get_next_free_page_kmalloc();
+  create_new_user_pml4(new_process->cr3, kernel_pml4_t);
+  new_process->state = RUNNING;
+  new_process->exit_status = 0;
+  new_process->next = NULL;
+  new_process->e_entry = (uint64_t) NULL;
+  
+  return new_process;
+}
+
+
+void first_process_switch(pcb *process, uint64_t rip, uint64_t flags) {
+  
+//  process->pstack = (uint64_t *) kmalloc(PAGESIZE);
+  
+  process->kstack[127] = 0x23; // DS/SS
+  process->kstack[126] = (uint64_t) &process->kstack[127]; //RSP
+  process->kstack[125] = flags; //flags
+  process->kstack[124] = 0x2b; //CS
+  process->kstack[123] = rip; //rip
+  
+  process->kstack[123 - 16] = (uint64_t)irq0 + 32;
+  
+  process->rsp = (uint64_t) &process->kstack[123 - 17];
+  
+  // physical address of cr3
+  process->cr3 = get_next_free_page_kmalloc();
+  
+  // map physical cr3 to virtual cr3
+  create_new_user_pml4(process->cr3, kernel_pml4_t);
+  
+  
+  
+  // load the new process's cr3
+  set_cr3((uint64_t *)process->cr3);
+  
+  
+  
+//  process->pstack = (uint64_t *) kmalloc(PAGESIZE);
+//  process->kstack[126] = (uint64_t) &process->pstack[511];
+  
+  // set new process's rsp
+  __asm__ volatile(
+  "\
+    movq %0, %%rsp;\
+  "
+  :
+  : "r" (process->rsp)
+  );
+  
+  
+  //set_tss_rsp((void *) &process->kstack[127]);
+
+  kprintf("process->kstack[127] = %p\n", process->kstack[127]);
+  kprintf("process->kstack[126] = %p\n", process->kstack[126]);
+  kprintf("process->kstack[125] = %p\n", process->kstack[125]);
+  kprintf("process->kstack[124] = %p\n", process->kstack[124]);
+  kprintf("process->kstack[123] = %p\n", process->kstack[123]);
+
+  
+/*  __asm__ volatile(
+  "\
+   movq $0x23, %rax;\
+   movq %rax, %ds;\
+   movq %rax, %es;\
+   movq %rax, %fs;\
+   movq %rax, %gs;\
+  "
+  );
+  */
+  
+  for(uint64_t i = 0; i < 10000; i++) {
+    for(uint64_t j = 0; j < 10000; j++) {
+      
+    }
+  }
+  
+  kprintf("process->kstack[127] = %p\n", process->kstack[127]);
+  kprintf("process->kstack[126] = %p\n", process->kstack[126]);
+  kprintf("process->kstack[125] = %p\n", process->kstack[125]);
+  kprintf("process->kstack[124] = %p\n", process->kstack[124]);
+  kprintf("process->kstack[123] = %p\n", process->kstack[123]);
+  
+  
+  kprintf("here");
+//  while(1);
+
+}
+
+

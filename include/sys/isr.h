@@ -13,4 +13,12 @@ typedef struct {
 void isr_install();
 void fault_handler(registers );
 
+int timer_ticks;
+
+void timer_phase(int frequency);
+
+void generate_timer();
+
+void user_mode_function();
+
 #endif
