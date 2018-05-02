@@ -109,4 +109,9 @@ int page_walk_user(uint64_t p_addr, uint64_t v_addr);
 uint64_t kmalloc_top_virtual_address_kernel(size_t size, uint64_t top_virtual_address);
 uint64_t kmalloc_top_virtual_address_user(size_t size, uint64_t top_virtual_address);
 
+
+uint64_t *get_valid_pdpe_base_add(uint64_t *pml4_offset);
+uint64_t *get_valid_pgd_base_add(uint64_t *pdpe_offset);
+uint64_t *get_valid_pte_base_add(uint64_t *pgd_offset);
+
 #endif

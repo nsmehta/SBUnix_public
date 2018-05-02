@@ -57,7 +57,7 @@ uint64_t syscall_4_parameters(uint64_t syscall_no, uint64_t p1, uint64_t p2, uin
 		"
 		: "=r" (output)
 		: "r"(syscall_no), "r"(p1), "r"(p2), "r"(p3)
-		: "%rdi", "%rsi", "%rdx", "%rcx", "%rbp", "%rbx", "%rsp"
+		: "%rdi", "%rsi", "%rdx", "%rcx", "%rbp", "%rbx", "%r12", "%r13", "%r14", "%r15"
 		);
 	return output;
 

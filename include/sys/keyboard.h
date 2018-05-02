@@ -120,7 +120,7 @@ enum scan_codes {
 void keyboard_interrupt();
 uint8_t hex_to_char(uint8_t);
 void init_keyboard();
-char *gets(char *s);
+char *getstring(char *s);
 
 int keyboard_flag;
 int key_count;

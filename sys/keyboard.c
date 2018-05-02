@@ -12,7 +12,8 @@ void init_keyboard() {
   key_count = 0;
 }
 
-char *gets(char *s) {
+char *getstring(char *s) {
+  // kprintf("hiiiiiiiiiiiiiiiii\n");
   init_keyboard();
   __asm__ __volatile__("sti");
   while(keyboard_flag != 1) {
@@ -24,8 +25,8 @@ char *gets(char *s) {
   }
   // if (keyboard_flag == 1) {
 
-    strcpy(s, buffer);
-    kprintf("\ntyped string is: %s\n", s);
+    // strcpy(s, buffer);
+    // kprintf("\ntyped string is: %s\n", s);
   // }
   return s;
 }
@@ -72,9 +73,10 @@ void keyboard_interrupt() {
     }
     
     kprintf("%c", character);
-    // if (keyboard_flag == 1) {
-    //   kprintf("is 1");
-    // }
+    if (keyboard_flag == 1) {
+      kprintf("is 1");
+      init_keyboard();
+    }
   }
   else {
     //kprintf("wrong input! %d \n%x\n", character, key);

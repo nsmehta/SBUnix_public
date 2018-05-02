@@ -11,6 +11,8 @@ volatile char *videoCardEnd = (volatile char *)0xB8FA0;
 volatile char *videoCardStart = (volatile char *)0xB8000;
 volatile char *videoCardPosition = (volatile char *)0xB8000;
 
+
+
 void setNewVideoCardAddresses(){
 	videoCardEnd = (volatile char *)0xFFFFFFFF800B8FA0;
 	videoCardStart = (volatile char *)0xFFFFFFFF800B8000;

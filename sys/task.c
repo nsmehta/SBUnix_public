@@ -3,6 +3,8 @@
 #include <sys/elf64.h>
 #include <sys/paging.h>
 #include <sys/gdt.h>
+#include <sys/tarfs.h>
+#include <sys/schedule.h>
 
 
 extern void irq0();
@@ -399,4 +401,39 @@ void first_process_switch(pcb *process, uint64_t rip, uint64_t flags) {
 
 }
 
+
+int exec_new_binary(char *filename) {
+
+  Elf64_Ehdr *p = get_elf(filename);
+  if (p == NULL) {
+    return 0;
+  }
+  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+  int result = validate_elf_header(p);
+  kprintf("result = %d\n", result);
+  result = check_elf_loadable(p);
+  kprintf("elf loadable = %d\n", result);
+  struct mm_struct *head = NULL;
+  if(result) {
+    head = load_elf_vmas(p);
+  }
+  kprintf("mm_struct = %p\n", head->mmap->vm_start);
+  int count = 0;
+  struct vm_area_struct *temp = head->mmap;
+  while(temp != NULL){
+    kprintf("vm_start = %d\n", temp->vm_type);
+    temp = temp->vm_next;
+    count++;
+  }
+  kprintf("count = %d\n", count);
+  kprintf("ls binary");
+
+
+  struct pcb *first_process = create_process(head);
+  kprintf("first process = %p\n", (uint64_t)first_process);
+
+  schedule_user_process(first_process);
+
+  return 1;
+}
 

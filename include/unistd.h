@@ -23,8 +23,8 @@ pid_t getpid(void);
 pid_t getppid(void);
 
 // OPTIONAL: implement for ``on-disk r/w file system (+10 pts)''
-off_t lseek(int fd, off_t offset, int whence);
-int mkdir(const char *pathname, mode_t mode);
+// off_t lseek(int fd, off_t offset, int whence);
+// int mkdir(const char *pathname, mode_t mode);
 
 // OPTIONAL: implement for ``signals and pipes (+10 pts)''
 int pipe(int pipefd[2]);

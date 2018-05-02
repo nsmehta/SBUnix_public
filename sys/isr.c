@@ -9,6 +9,7 @@
 #include <sys/task.h>
 #include <sys/gdt.h>
 #include <sys/schedule.h>
+#include <string.h>
 
 /* from http://www.osdever.net/bkerndev/Docs/isrs.htm */
 
@@ -140,44 +141,39 @@ void syscall_handler(registers *r)
   syscall_no = r->rax;
   if (syscall_no == 1) {
     // printf
-    kprintf("hello!\n");
-    kprintf("r->int_no = %p\n", r->int_no);
-    kprintf("r->r15= %p\n", r->r15);
-    kprintf("r->r14= %p\n", r->r14);
-    kprintf("r->r13= %p\n", r->r13);
-    kprintf("r->r12= %p\n", r->r12);
-    kprintf("r->r10= %p\n", r->r10);
-    kprintf("r->r9= %p\n", r->r9);
-    kprintf("r->r8= %p\n", r->r8);
-    kprintf("r->rdx= %p\n", r->rdx);
-    kprintf("r->rcx= %p \n", r->rcx);
-    kprintf("r->rax = %p\n", r->rax);
-    kprintf("r->rbp = %p\n", r->rbp);
-    kprintf("r->rdi = %p\n", r->rdi);
-    kprintf("r->rsi = %p\n", r->rsi);
+    kprintf("%s", (char *)r->rdi);
+    // kprintf("hello!\n");
+    // kprintf("r->int_no = %p\n", r->int_no);
+    // kprintf("r->r15= %p\n", r->r15);
+    // kprintf("r->r14= %p\n", r->r14);
+    // kprintf("r->r13= %p\n", r->r13);
+    // kprintf("r->r12= %p\n", r->r12);
+    // kprintf("r->r10= %p\n", r->r10);
+    // kprintf("r->r9= %p\n", r->r9);
+    // kprintf("r->r8= %p\n", r->r8);
+    // kprintf("r->rdx= %p\n", r->rdx);
+    // kprintf("r->rcx= %p \n", r->rcx);
+    // kprintf("r->rax = %p\n", r->rax);
+    // kprintf("r->rbp = %p\n", r->rbp);
+    // kprintf("r->rdi = %s\n", (char *)r->rdi);
+    // kprintf("r->rsi = %p\n", r->rsi);
   } else if (syscall_no == 2) {
     // gets
     
     // __asm__ volatile("sti");
     // while (keyboard_flag != 1);
-    char *s = gets((char *)r->rdi);
+    char *s = getstring((char *)r->rdi);
+    kprintf("got string = %s\n", s);
     __asm__ volatile("movq %%rax, %0;" : "=m" (s));
-  }
-
-  // for(uint64_t i = 0; i < 20; i++){
-  //   kprintf("%p ", *((uint64_t)r + 8*i));
+  } 
+  // else if (syscall_no == 3) {
+  //   // execvpe
+  //   kprintf("in isr\n\n");
+  //   if (strcmp((char *)r->rdi, "ls") == 0) {
+  //     exec_new_binary("bin/ls");
+  //   }
   // }
-  // kprintf("r.rflags = %p\n", r.rflags);
-  // kprintf("r.useresp = %p\n", r.useresp);
-  // kprintf("r.err_code = %p\n", r.err_code);
 
-
-  // uint64_t syscall_no = 0;
-  // __asm__ volatile("movq %%rax, %0" :"=r"(syscall_no));
-  // kprintf("syscall_no = %p\n", syscall_no);
-
-  // while(1);
-  // __asm__ volatile("movq %%rax, %0;" : "=r" (syscall_no ));
   outb(0x20, 0x20);  
 
 }
@@ -326,14 +322,17 @@ void generate_timer() {
       
       // run a ready process
       pcb *process = get_next_ready_process();
-      // kprintf("process = %p\n", process);
+      if(process != NULL) {
+
+        // kprintf("process = %p\n", process->pid);
+      }
       if (currently_running_process != NULL) {
         // kprintf("position = %p\n", (uint64_t)&(currently_running_process->kstack[511]) - (currently_running_process->rsp));
       }
       
       if (process != NULL) {
 
-        // kprintf("trying to run process: %d\n", process->pid);
+        kprintf("trying to run process: %d\n", process->pid);
         
         uint64_t *old_rsp;
 

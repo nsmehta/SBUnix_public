@@ -26,5 +26,6 @@ void switch_to_user_mode(pcb*);
 pcb *create_process(struct mm_struct *head);
 void first_process_switch(pcb *process, uint64_t rip, uint64_t flags);
 pcb *create_dummy_process();
+int exec_new_binary(char *filename);
 
 #endif
