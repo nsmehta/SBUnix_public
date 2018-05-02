@@ -4,7 +4,13 @@ int main(int argc, char *argv[], char *envp[]) {
   // puts("sbush> ");
   // return 0;
 	// while(1);
-	printf("xxxhello!hello!\n");
+
+	// printf("xxxhello!hello!\n");
+	char *s = '\0';
+	while(1) {
+		s = gets(s);
+		printf(s);
+	}
 	// __asm__ __volatile__ ("int $0x80");
 	while(1);
 	return 0;

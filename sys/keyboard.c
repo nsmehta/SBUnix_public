@@ -3,9 +3,43 @@
 #include <sys/kprintf.h>
 #include <sys/isr.h>
 #include <sys/io.h>
+#include <string.h>
+
+
+void init_keyboard() {
+  keyboard_flag = 0;
+  strcpy(buffer, "\0");
+  key_count = 0;
+}
+
+char *gets(char *s) {
+  init_keyboard();
+  __asm__ __volatile__("sti");
+  while(keyboard_flag != 1) {
+    for(uint64_t i = 0; i < 10000; i++) {
+      for(uint64_t j = 0; j < 10; j++) {
+
+      }
+    }
+  }
+  // if (keyboard_flag == 1) {
+
+    strcpy(s, buffer);
+    kprintf("\ntyped string is: %s\n", s);
+  // }
+  return s;
+}
 
 void keyboard_interrupt() {
 	//kprintf("keyboard interrupt called...\n");
+
+  // if (keyboard_flag == 1) {
+
+  //   strcpy(keyboard_input, buffer);
+    
+  //   init_keyboard();
+  // }
+
   uint8_t key;
   uint16_t port = 0x60;
   
@@ -25,10 +59,22 @@ void keyboard_interrupt() {
 		       );
   uint8_t character = hex_to_char(key);
 
+
 	//kprintf("key pressed = %d\n", key);
 	//kprintf("hex key pressed = %c\n", character);
   if(character != 0) {
+    if (character == (uint8_t)KB_ENTER) {
+      buffer[key_count++] = '\0';
+      keyboard_flag = 1;
+    }
+    else if (key_count < 256) {
+      buffer[key_count++] = character;
+    }
+    
     kprintf("%c", character);
+    // if (keyboard_flag == 1) {
+    //   kprintf("is 1");
+    // }
   }
   else {
     //kprintf("wrong input! %d \n%x\n", character, key);
@@ -64,7 +110,8 @@ uint8_t hex_to_char(uint8_t key) {
   }
 
   if(key == KB_ENTER) {
-    kprintf("\n");
+    // kprintf("alpha\n");
+    return (uint8_t)KB_ENTER;
   }
 
   return 0;  

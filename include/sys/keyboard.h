@@ -119,5 +119,13 @@ enum scan_codes {
 
 void keyboard_interrupt();
 uint8_t hex_to_char(uint8_t);
+void init_keyboard();
+char *gets(char *s);
+
+int keyboard_flag;
+int key_count;
+
+char buffer[256];
+char keyboard_input[256];
 
 #endif

@@ -33,7 +33,7 @@ void user_mode_function_1() {
       // kprintf("in user function 1\n");
      }
     }
-    kprintf("in user function 1\n");
+    // kprintf("in user function 1\n");
     
   }  
   
@@ -225,6 +225,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   init_gdt();
   idt_install();
   init_idt();
+  init_keyboard();
 
 //  while(1);
 
@@ -379,7 +380,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
 //  switch_to_user_mode(up);
   
-  
+  tarfs_init();
   char *filename = "bin/sbush";
   Elf64_Ehdr *p = get_elf(filename);
   kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
@@ -400,6 +401,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     count++;
   }
   kprintf("count = %d\n", count);
+  kprintf("ls binary");
+  // while(1);
 
 
   struct pcb *first_process = create_process(head);

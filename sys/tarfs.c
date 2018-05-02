@@ -336,7 +336,7 @@ struct posix_header_ustar *traverse_tarfs(char *filename) {
       return p;// + 1 + file_size/512 + (file_size%512 != 0);    
     }
     //p += 1 + file_size/512 + (file_size%512 != 0);
-    p += 1;
+    p = (struct posix_header_ustar *)((uint64_t)p + 8);
   }
   return NULL;
 }

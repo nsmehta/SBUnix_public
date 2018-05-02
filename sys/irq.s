@@ -137,49 +137,49 @@ irq47:
   jmp irq_common_stub
 
 irq128:
-  cli
+  # cli
   pushq $0
   pushq $128
   # jmp irq_common_stub
 
-    pushq %rdi
-    pushq %rax
-    pushq %rbx
-    pushq %rcx
-    pushq %rdx
-    pushq %rbp
-    pushq %rsi
-    pushq %r8
-    pushq %r9
-    pushq %r10
-    pushq %r11
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
+  pushq %rdi
+  pushq %rax
+  pushq %rbx
+  pushq %rcx
+  pushq %rdx
+  pushq %rbp
+  pushq %rsi
+  pushq %r8
+  pushq %r9
+  pushq %r10
+  pushq %r11
+  pushq %r12
+  pushq %r13
+  pushq %r14
+  pushq %r15
 
-    movq %rsp, %rdi
-    callq syscall_handler
+  movq %rsp, %rdi
+  callq syscall_handler
 
-    popq %r15
-    popq %r14
-    popq %r13
-    popq %r12
-    popq %r11
-    popq %r10
-    popq %r9
-    popq %r8
-    popq %rsi
-    popq %rbp
-    popq %rdx
-    popq %rcx
-    popq %rbx
-    popq %rax
-    popq %rdi
+  popq %r15
+  popq %r14
+  popq %r13
+  popq %r12
+  popq %r11
+  popq %r10
+  popq %r9
+  popq %r8
+  popq %rsi
+  popq %rbp
+  popq %rdx
+  popq %rcx
+  popq %rbx
+  popq %rax
+  popq %rdi
 
-    add $16, %rsp
-    sti
-    iretq
+  add $16, %rsp
+  # sti
+  iretq
 
 
 
@@ -197,39 +197,40 @@ irq_common_stub:
   # pushq %rbp
   # pushq %rsi
   # pushq %rdi
-  pushq %rsi
-  pushq %rdi
-  pushq %rbp
-  pushq %rax
-  pushq %rbx
-  pushq %rcx
-  pushq %rdx
-  pushq %r8
-  pushq %r9
-  pushq %r10
-  pushq %r11
-  pushq %r12
-  pushq %r13
-  pushq %r14
-  pushq %r15
+    pushq %rdi
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rbp
+    pushq %rsi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
 
 
-  movq %ds, %rax
-  pushq %rax
+  # movq %ds, %rax
+  # pushq %rax
 
-  movq $0x10, %rax
-  movq %rax, %ds
-  movq %rax, %es
-  movq %rax, %fs
-  movq %rax, %gs
+  # movq $0x10, %rax
+  # movq %rax, %ds
+  # movq %rax, %es
+  # movq %rax, %fs
+  # movq %rax, %gs
 
+  movq %rsp, %rdi
   callq irq_handler
 
-  popq %rbx
-  movq %rbx, %ds
-  movq %rbx, %es
-  movq %rbx, %fs
-  movq %rbx, %gs
+  # popq %rbx
+  # movq %rbx, %ds
+  # movq %rbx, %es
+  # movq %rbx, %fs
+  # movq %rbx, %gs
 
   # popa
   # popq %rdi
@@ -248,13 +249,13 @@ irq_common_stub:
   popq %r10
   popq %r9
   popq %r8
+  popq %rsi
+  popq %rbp
   popq %rdx
   popq %rcx
   popq %rbx
   popq %rax
-  popq %rbp
   popq %rdi
-  popq %rsi
 
 
 

@@ -136,24 +136,33 @@ void syscall_handler(registers *r)
   // rsp = param 5
 
   uint64_t syscall_no;
-  __asm__ volatile("movq %%rax, %0" :"=r"(syscall_no));
-  kprintf("syscall_no = %p\n", syscall_no);
 
-  kprintf("hello!\n");
-  kprintf("r->int_no = %p\n", r->int_no);
-  kprintf("r->r15= %p\n", r->r15);
-  kprintf("r->r14= %p\n", r->r14);
-  kprintf("r->r13= %p\n", r->r13);
-  kprintf("r->r12= %p\n", r->r12);
-  kprintf("r->r10= %p\n", r->r10);
-  kprintf("r->r9= %p\n", r->r9);
-  kprintf("r->r8= %p\n", r->r8);
-  kprintf("r->rdx= %p\n", r->rdx);
-  kprintf("r->rcx= %p \n", r->rcx);
-  kprintf("r->rax = %p\n", r->rax);
-  kprintf("r->rbp = %p\n", r->rbp);
-  kprintf("r->rdi = %p\n", r->rdi);
-  kprintf("r->rsi = %p\n", r->rsi);
+  syscall_no = r->rax;
+  if (syscall_no == 1) {
+    // printf
+    kprintf("hello!\n");
+    kprintf("r->int_no = %p\n", r->int_no);
+    kprintf("r->r15= %p\n", r->r15);
+    kprintf("r->r14= %p\n", r->r14);
+    kprintf("r->r13= %p\n", r->r13);
+    kprintf("r->r12= %p\n", r->r12);
+    kprintf("r->r10= %p\n", r->r10);
+    kprintf("r->r9= %p\n", r->r9);
+    kprintf("r->r8= %p\n", r->r8);
+    kprintf("r->rdx= %p\n", r->rdx);
+    kprintf("r->rcx= %p \n", r->rcx);
+    kprintf("r->rax = %p\n", r->rax);
+    kprintf("r->rbp = %p\n", r->rbp);
+    kprintf("r->rdi = %p\n", r->rdi);
+    kprintf("r->rsi = %p\n", r->rsi);
+  } else if (syscall_no == 2) {
+    // gets
+    
+    // __asm__ volatile("sti");
+    // while (keyboard_flag != 1);
+    char *s = gets((char *)r->rdi);
+    __asm__ volatile("movq %%rax, %0;" : "=m" (s));
+  }
 
   // for(uint64_t i = 0; i < 20; i++){
   //   kprintf("%p ", *((uint64_t)r + 8*i));
@@ -173,19 +182,20 @@ void syscall_handler(registers *r)
 
 }
 
-void fault_handler(registers r)
+void fault_handler(registers *r)
 {
-    kprintf("in fault handler\n");
+    // kprintf("in fault handler\n");
+
     // __asm__ __volatile__("iretq");
-    kprintf("r.int_no = %d\n", r.int_no);
-    if (r.int_no == 14) {
+    // kprintf("r->int_no = %d\n", r->int_no);
+    if (r->int_no == 14) {
       page_fault_handler();
     }
     
-    else if (r.int_no < 32)
+    else if (r->int_no < 32)
     {
-        kprintf("%s\n", exception_messages[r.int_no]);
-        if (r.int_no == 13) {
+        kprintf("%s\n", exception_messages[r->int_no]);
+        if (r->int_no == 13) {
           kprintf("cr2 = %p\n", get_cr2());
         }
         kprintf(" Exception. System Halted!\n");
@@ -196,14 +206,14 @@ void fault_handler(registers r)
     outb(0x20, 0x20);
 }
 
-void irq_handler(registers r)
+void irq_handler(registers *r)
 {
-    kprintf("r.int_no = %p\n", r.int_no);
-		if(r.int_no == 32) {
+    // kprintf("1. r->int_no = %p\n", r->int_no);
+		if(r->int_no == 32) {
 			outb(0x20, 0x20);
 			return;
 		}
-    if (r.int_no >= 40)
+    if (r->int_no >= 40)
     {
 
         kprintf(" Exception. System Halted!\n");
@@ -211,7 +221,7 @@ void irq_handler(registers r)
         // send reset signal to slave
         outb(0xA0, 0x20);
     }
-		if(r.int_no == 33) {
+		if(r->int_no == 33) {
 			keyboard_interrupt();
 		}
     
@@ -323,7 +333,7 @@ void generate_timer() {
       
       if (process != NULL) {
 
-        kprintf("trying to run process: %d\n", process->pid);
+        // kprintf("trying to run process: %d\n", process->pid);
         
         uint64_t *old_rsp;
 
@@ -369,7 +379,7 @@ void generate_timer() {
         
       } else {
         // run idle process if no other process remaining
-        kprintf("running p1 ");
+        // kprintf("running p1 ");
         uint64_t *old_rsp;
 
         __asm__ volatile (
