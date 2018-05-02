@@ -5,7 +5,7 @@
 #include <sys/io.h>
 #include <sys/keyboard.h>
 #include <sys/paging.h>
-#include <sys/timer.h>
+// #include <sys/timer.h>
 #include <sys/task.h>
 #include <sys/gdt.h>
 #include <sys/schedule.h>
@@ -155,7 +155,7 @@ void syscall_handler(registers *r)
     // kprintf("r->rcx= %p \n", r->rcx);
     // kprintf("r->rax = %p\n", r->rax);
     // kprintf("r->rbp = %p\n", r->rbp);
-    // kprintf("r->rdi = %s\n", (char *)r->rdi);
+    // kprintf("r->rdi = %p\n", r->rdi);
     // kprintf("r->rsi = %p\n", r->rsi);
   } else if (syscall_no == 2) {
     // gets
@@ -166,13 +166,13 @@ void syscall_handler(registers *r)
     kprintf("got string = %s\n", s);
     __asm__ volatile("movq %%rax, %0;" : "=m" (s));
   } 
-  // else if (syscall_no == 3) {
-  //   // execvpe
-  //   kprintf("in isr\n\n");
-  //   if (strcmp((char *)r->rdi, "ls") == 0) {
-  //     exec_new_binary("bin/ls");
-  //   }
-  // }
+  else if (syscall_no == 3) {
+    // execvpe
+    kprintf("in isr\n\n");
+    if (strcmp((char *)r->rdi, "ls") == 0) {
+      exec_new_binary("bin/ls");
+    }
+  }
 
   outb(0x20, 0x20);  
 
@@ -183,7 +183,7 @@ void fault_handler(registers *r)
     // kprintf("in fault handler\n");
 
     // __asm__ __volatile__("iretq");
-    // kprintf("r->int_no = %d\n", r->int_no);
+    kprintf("r->int_no = %d\n", r->int_no);
     if (r->int_no == 14) {
       page_fault_handler();
     }
@@ -332,7 +332,7 @@ void generate_timer() {
       
       if (process != NULL) {
 
-        kprintf("trying to run process: %d\n", process->pid);
+        // kprintf("trying to run process: %d\n", process->pid);
         
         uint64_t *old_rsp;
 

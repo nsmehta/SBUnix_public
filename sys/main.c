@@ -12,7 +12,7 @@
 #include <sys/keyboard.h>
 #include <sys/idt.h>
 #include <sys/isr.h>
-#include <sys/timer.h>
+// #include <sys/timer.h>
 #include <sys/schedule.h>
 
 #define INITIAL_STACK_SIZE 4096
@@ -30,7 +30,7 @@ void user_mode_function_1() {
   while(1) {
     for(uint64_t i = 0; i < 20000; i++) {
      for (uint64_t j = 0; j < 1000; j++) {
-      // kprintf("in user function 1\n");
+      // kprintf("IDLE function 1\n");
      }
     }
     // kprintf("in user function 1\n");
@@ -379,7 +379,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  kprintf("up->rsp = %p, kstack[127] = %p\n", up->rsp, up->kstack[127]);
   
 //  switch_to_user_mode(up);
-  
+
   tarfs_init();
   char *filename = "bin/sbush";
   Elf64_Ehdr *p = get_elf(filename);
@@ -401,7 +401,6 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     count++;
   }
   kprintf("count = %d\n", count);
-  kprintf("ls binary");
   // while(1);
 
 

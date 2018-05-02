@@ -330,7 +330,11 @@ uint64_t *create_kernel_pml4() {
   return kernel_pml4;
 }
 
+
+
+
 // mapping all pages from physbase to physfree + free list
+// reference: http://www.noteblok.net/wp-content/uploads/sites/3/2014/06/Self-mapped_Page-Tables_Vogel_Thesis.pdf
 void map_all_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p_addr_start, pml4 *kernel_pml4) {
   //offsets:
   
@@ -345,6 +349,7 @@ void map_all_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p
     uint64_t pdpe_offset = (v_addr_start >> 30) & 0x1ff;
     uint64_t pgd_offset = (v_addr_start >> 21) & 0x1ff;
     uint64_t pte_offset = (v_addr_start >> 12) & 0x1ff;
+
 
     uint64_t *pdpe_base_add = (uint64_t *) kernel_pml4[pml4_offset];
 

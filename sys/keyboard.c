@@ -74,8 +74,8 @@ void keyboard_interrupt() {
     
     kprintf("%c", character);
     if (keyboard_flag == 1) {
-      kprintf("is 1");
-      init_keyboard();
+      //kprintf("is 1");
+      //init_keyboard();
     }
   }
   else {

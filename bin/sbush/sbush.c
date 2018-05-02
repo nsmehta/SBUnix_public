@@ -9,13 +9,13 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	// const char *str = "I am in Sbush";
 	// int i = 123;
-	printf("xxxhello!hello! ");
+	printf("sbush:");
 	// printf("%s %s %s", str, str, str);
 	// printf("%d", i);
-	// char *s = '\0';
+	char *s = '\0';
 	while(1) {
-		// s = gets(s);
-		// printf(s);
+		s = gets(s);
+		printf(s);
 		// if(strcmp(s, "ls")) {
 		// 	execvpe(s, argv, envp);
 		// }
