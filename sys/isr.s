@@ -485,25 +485,25 @@ isr_common_stub:
 	  pushq %r15
 
 
-	movq %ds, %rax
-	pushq %rax
+	# movq %ds, %rax
+	# pushq %rax
 
-	movq $0x10, %rax	# load the kernel data segment descriptor
-	movq %rax, %ds
-	movq %rax, %es
-	movq %rax, %fs
-	movq %rax, %gs
+	# movq $0x10, %rax	# load the kernel data segment descriptor
+	# movq %rax, %ds
+	# movq %rax, %es
+	# movq %rax, %fs
+	# movq %rax, %gs
 
 	# mov %eax, fault_handler
   # call %eax
 	movq %rsp, %rdi
 	callq fault_handler
 
-	popq %rax
-	movq %rax, %ds
-	movq %rax, %es
-	movq %rax, %fs
-	movq %rax, %gs
+	# popq %rax
+	# movq %rax, %ds
+	# movq %rax, %es
+	# movq %rax, %fs
+	# movq %rax, %gs
 
 	# popq %rdi
 	# popq %rsi
@@ -621,40 +621,73 @@ isr_common_stub:
 
 timer_interrupt:
   cli
-  pushq %rsi
-  pushq %rdi
-  pushq %rbp
-  pushq %rax
-  pushq %rbx
-  pushq %rcx
-  pushq %rdx
-  pushq %r8
-  pushq %r9
-  pushq %r10
-  pushq %r11
-  pushq %r12
-  pushq %r13
-  pushq %r14
-  pushq %r15
+  # pushq %rsi
+  # pushq %rdi
+  # pushq %rbp
+  # pushq %rax
+  # pushq %rbx
+  # pushq %rcx
+  # pushq %rdx
+  # pushq %r8
+  # pushq %r9
+  # pushq %r10
+  # pushq %r11
+  # pushq %r12
+  # pushq %r13
+  # pushq %r14
+  # pushq %r15
+	pushq %rdi
+	pushq %rax
+	pushq %rbx
+	pushq %rcx
+	pushq %rdx
+	pushq %rbp
+	pushq %rsi
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
   
   movq %rsp, %rdi
   callq generate_timer
   
-  popq %r15
-  popq %r14
-  popq %r13
-  popq %r12
-  popq %r11
-  popq %r10
-  popq %r9
-  popq %r8
-  popq %rdx
-  popq %rcx
-  popq %rbx
-  popq %rax
-  popq %rbp
-  popq %rdi
-  popq %rsi
+	popq %r15
+  	popq %r14
+  	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rsi
+	popq %rbp
+	popq %rdx
+	popq %rcx
+	popq %rbx
+	popq %rax
+	popq %rdi
+
+  
+  # popq %r15
+  # popq %r14
+  # popq %r13
+  # popq %r12
+  # popq %r11
+  # popq %r10
+  # popq %r9
+  # popq %r8
+  # popq %rdx
+  # popq %rcx
+  # popq %rbx
+  # popq %rax
+  # popq %rbp
+  # popq %rdi
+  # popq %rsi
   
   sti
   iretq
