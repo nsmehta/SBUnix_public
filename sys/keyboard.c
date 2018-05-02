@@ -13,7 +13,6 @@ void init_keyboard() {
 }
 
 char *getstring(char *s) {
-  // kprintf("hiiiiiiiiiiiiiiiii\n");
   init_keyboard();
   __asm__ __volatile__("sti");
   while(keyboard_flag != 1) {
@@ -25,9 +24,10 @@ char *getstring(char *s) {
   }
   // if (keyboard_flag == 1) {
 
-    // strcpy(s, buffer);
-    // kprintf("\ntyped string is: %s\n", s);
+    strcpy(s, buffer);
+    kprintf("\ntyped string is: %s\n", s);
   // }
+  // init_keyboard();
   return s;
 }
 
@@ -67,15 +67,17 @@ void keyboard_interrupt() {
     if (character == (uint8_t)KB_ENTER) {
       buffer[key_count++] = '\0';
       keyboard_flag = 1;
+      kprintf("\n");
     }
     else if (key_count < 256) {
       buffer[key_count++] = character;
+      kprintf("%c", character);
     }
     
-    kprintf("%c", character);
+    
     if (keyboard_flag == 1) {
-      //kprintf("is 1");
-      //init_keyboard();
+      // kprintf("is 1");
+      // init_keyboard();
     }
   }
   else {

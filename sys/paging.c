@@ -63,7 +63,7 @@ void append_free_list(uint64_t start, uint64_t end, uint64_t physfree) {
 //      last->next = NULL;
       temp = last;
       temp->next = NULL;
-      kprintf("last = %p\n", last->p_addr);
+      // kprintf("last = %p\n", last->p_addr);
     }
   } else {
     if(start >= physfree) {
@@ -84,7 +84,7 @@ void append_free_list(uint64_t start, uint64_t end, uint64_t physfree) {
       }
       temp = last;
       temp->next = NULL;
-      kprintf("last = %p\n", last->p_addr);
+      // kprintf("last = %p\n", last->p_addr);
     }
   }
 }
@@ -93,7 +93,7 @@ void set_free_list_head() {
   uint64_t free_list_size = free_list_total_pages * sizeof(Page);
   uint64_t free_list_pages_reqd = 0;
   
-  kprintf("free_list_page_length = %p\n", free_list_page_length);
+  // kprintf("free_list_page_length = %p\n", free_list_page_length);
   
   if(free_list_size % (uint64_t)PAGESIZE) {
     free_list_pages_reqd = free_list_size / (uint64_t)PAGESIZE + 1;
@@ -108,9 +108,9 @@ void set_free_list_head() {
   free_list_head = temp;
   free_list_page_length = free_list_pages_reqd;
   free_list_total_pages -= free_list_pages_reqd;
-  kprintf("free_list_total_pages = %p\n", free_list_total_pages);
+  // kprintf("free_list_total_pages = %p\n", free_list_total_pages);
   
-  kprintf("free_list_head = %p, sizeof(Page) = %p\n", free_list_head, sizeof(Page));
+  // kprintf("free_list_head = %p, sizeof(Page) = %p\n", free_list_head, sizeof(Page));
   
 }
 
@@ -140,7 +140,7 @@ void map_mem_to_pages(uint64_t end, uint64_t physfree) {
   // size of the page descriptor list
   free_list_size = num_pages * sizeof(Page);
   
-  kprintf("num pages = %p, sizeof Page = %p\n", num_pages, sizeof(Page));
+  // kprintf("num pages = %p, sizeof Page = %p\n", num_pages, sizeof(Page));
   
   // calculate the number of pages required to store the linked list of all pages
   if(free_list_size % (uint64_t)PAGESIZE != 0) {
@@ -151,9 +151,9 @@ void map_mem_to_pages(uint64_t end, uint64_t physfree) {
   }
 
   
-  kprintf("size of page list is : %p and number of pages used to store it: %p\n", free_list_size, free_list_page_length);
+  // kprintf("size of page list is : %p and number of pages used to store it: %p\n", free_list_size, free_list_page_length);
   free_list_start_address = physfree + free_list_page_length * (uint64_t)PAGESIZE;
-  kprintf("The start of free pages is %p\n", free_list_start_address);
+  // kprintf("The start of free pages is %p\n", free_list_start_address);
   
   // create linked list of free and allocated pages
   create_free_list(free_list_start_address);
@@ -168,7 +168,7 @@ void create_free_list(uint64_t free_list_start_address) {
   int free_list_status = ALLOCATED;
   while(temp) {
     if (!temp->next) {
-      kprintf("last = %p, p_addr = %p\n", temp, temp->p_addr);
+      // kprintf("last = %p, p_addr = %p\n", temp, temp->p_addr);
     }
     if(free_list_status == ALLOCATED) {
       temp->status = ALLOCATED;
@@ -187,7 +187,7 @@ void create_free_list(uint64_t free_list_start_address) {
     }
     
   }
-  kprintf("Free_list_head->p_addr : %p\n", free_list_head->p_addr);
+  // kprintf("Free_list_head->p_addr : %p\n", free_list_head->p_addr);
 }
 
 uint64_t get_free_list_head() {
@@ -236,7 +236,7 @@ void print_free_list() {
 //    }
     
     if ((Page *)((uint64_t)temp->next) != NULL && (((Page *)((uint64_t)temp->next))->p_addr < temp->p_addr)) {
-      kprintf("lower!!\n");
+      // kprintf("lower!!\n");
     }
     
 //    free_list_head_kmalloc->status = ALLOCATED;
@@ -244,7 +244,7 @@ void print_free_list() {
     temp = (Page *)((uint64_t)temp->next);
     i++;
   }
-  kprintf("i = %d, free = %d, all = %d\n", i, free_c, all_c);
+  // kprintf("i = %d, free = %d, all = %d\n", i, free_c, all_c);
   
 }
 
@@ -253,7 +253,7 @@ void print_free_list_kmalloc() {
   int i = 0;
   while(temp != NULL) {
     
-    kprintf("%p %p|\n", temp, temp->p_addr);
+    // kprintf("%p %p|\n", temp, temp->p_addr);
     
 //    free_list_head_kmalloc->status = ALLOCATED;
     Page *next = (temp->next);
@@ -263,14 +263,14 @@ void print_free_list_kmalloc() {
     }
     next = (Page *)(KERNBASE + (uint64_t)temp->next);
     if (next != NULL && next < temp) {
-      kprintf("lower! %p\n", next);
+      // kprintf("lower! %p\n", next);
       break;
     }
     temp = (Page *)(KERNBASE + (uint64_t)temp->next);
     i++;
   }
-  kprintf("%p, %p\n", temp, temp->p_addr);
-  kprintf("i = %d\n", i);
+  // kprintf("%p, %p\n", temp, temp->p_addr);
+  // kprintf("i = %d\n", i);
   
 }
 
@@ -338,7 +338,7 @@ uint64_t *create_kernel_pml4() {
 void map_all_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p_addr_start, pml4 *kernel_pml4) {
   //offsets:
   
-  kprintf("v_addr = %p, p_addr = %p\n", v_addr_start, p_addr_start);
+  // kprintf("v_addr = %p, p_addr = %p\n", v_addr_start, p_addr_start);
   v_addr_start = page_align(v_addr_start);
   p_addr_start = page_align(p_addr_start);
   
@@ -417,7 +417,7 @@ void map_all_kernel_pages(uint64_t v_addr_start, uint64_t v_addr_end, uint64_t p
 
 void set_top_virtual_address(uint64_t v_addr) {
   top_virtual_address = v_addr;
-  kprintf("top virtual address = %p\n", top_virtual_address);
+  // kprintf("top virtual address = %p\n", top_virtual_address);
   paging_user_stack_top = 0xfffffe0000000000 + 0x1000 - 0x8;
 }
 
@@ -439,15 +439,15 @@ uint64_t kmalloc(size_t size) {
 
     uint64_t p_addr = get_next_free_page_kmalloc();
     if (p_addr == 0) {
-      kprintf("no free pages left! %p\n", i);
+      // kprintf("no free pages left! %p\n", i);
       return 0;
     }
-    kprintf("next free = %p\n", p_addr);
+    // kprintf("next free = %p\n", p_addr);
 
     int result = page_walk(p_addr, v_addr);
 
     if (result == 0) {
-      kprintf("kmalloc failed! i = %p\n", i);
+      // kprintf("kmalloc failed! i = %p\n", i);
       return 0;
     }
     v_addr += (uint64_t)PAGESIZE;
@@ -478,7 +478,7 @@ uint64_t kmalloc_user(size_t size) {
 
     uint64_t p_addr = get_next_free_page_kmalloc();
     if (p_addr == 0) {
-      kprintf("no free pages left! %p\n", i);
+      // kprintf("no free pages left! %p\n", i);
       return 0;
     }
     // kprintf("next user free = %p, vaddr = %p\n", p_addr, v_addr);
@@ -486,7 +486,7 @@ uint64_t kmalloc_user(size_t size) {
     int result = page_walk_user(p_addr, v_addr);
 
     if (result == 0) {
-      kprintf("kmalloc failed! i = %p\n", i);
+      // kprintf("kmalloc failed! i = %p\n", i);
       return 0;
     }
     v_addr += (uint64_t)PAGESIZE;
@@ -517,15 +517,15 @@ uint64_t kmalloc_top_virtual_address_kernel(size_t size, uint64_t new_top_virtua
 
     uint64_t p_addr = get_next_free_page_kmalloc();
     if (p_addr == 0) {
-      kprintf("no free pages left! %p\n", i);
+      // kprintf("no free pages left! %p\n", i);
       return 0;
     }
-    kprintf("next free = %p\n", p_addr);
+    // kprintf("next free = %p\n", p_addr);
 
     int result = page_walk(p_addr, v_addr);
 
     if (result == 0) {
-      kprintf("kmalloc failed! i = %p\n", i);
+      // kprintf("kmalloc failed! i = %p\n", i);
       return 0;
     }
     v_addr += (uint64_t)PAGESIZE;
@@ -551,15 +551,15 @@ uint64_t kmalloc_top_virtual_address_user(size_t size, uint64_t user_top_virtual
   uint64_t top = user_top_virtual_address;
   uint64_t v_addr = top;
 
-  kprintf("top virtual address = %p, size = %p, pages = %p\n", top, size, no_of_pages);
+  // kprintf("top virtual address = %p, size = %p, pages = %p\n", top, size, no_of_pages);
   
 
   for(uint64_t i = 0; i < no_of_pages; i++) {
 
     uint64_t p_addr = get_next_free_page_kmalloc();
-    kprintf("p_addr = %p\n", p_addr);
+    // kprintf("p_addr = %p\n", p_addr);
     if (p_addr == 0) {
-      kprintf("no free pages left! %p\n", i);
+      // kprintf("no free pages left! %p\n", i);
       return 0;
     }
     // kprintf("next user page walk free = %p\n", p_addr);
@@ -567,7 +567,7 @@ uint64_t kmalloc_top_virtual_address_user(size_t size, uint64_t user_top_virtual
     int result = page_walk_user(p_addr, v_addr);
 
     if (result == 0) {
-      kprintf("kmalloc failed! i = %p\n", i);
+      // kprintf("kmalloc failed! i = %p\n", i);
       return 0;
     }
     v_addr += (uint64_t)PAGESIZE;
@@ -615,7 +615,7 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
         
         if(is_valid_page((uint64_t) *pte_rec_addr)) {
           
-          kprintf("valid pte! = %p\n", (uint64_t) *pte_rec_addr);
+          // kprintf("valid pte! = %p\n", (uint64_t) *pte_rec_addr);
           // the virtual page is already mapped! we will need to free the physical page and return 0
           return 0;
           
@@ -655,7 +655,7 @@ int page_walk(uint64_t p_addr, uint64_t v_addr) {
     
   } else {
     
-    kprintf("1. not valid pml4\n");
+    // kprintf("1. not valid pml4\n");
 
     uint64_t physical_page = get_next_free_page_kmalloc();
 
@@ -715,7 +715,7 @@ int page_walk_user(uint64_t p_addr, uint64_t v_addr) {
         
         if(is_valid_page((uint64_t) *pte_rec_addr)) {
           
-          kprintf("valid pte! = %p\n", (uint64_t) *pte_rec_addr);
+          // kprintf("valid pte! = %p\n", (uint64_t) *pte_rec_addr);
           // the virtual page is already mapped! we will need to free the physical page and return 0
           return 0;
           
@@ -755,7 +755,7 @@ int page_walk_user(uint64_t p_addr, uint64_t v_addr) {
     
   } else {
     
-    kprintf("2. not valid pml4: %p\n", (uint64_t) *pml4_rec_addr);
+    // kprintf("2. not valid pml4: %p\n", (uint64_t) *pml4_rec_addr);
 
     uint64_t physical_page = get_next_free_page_kmalloc();
 
@@ -799,7 +799,7 @@ uint64_t create_new_kernel_pml4(uint64_t p_addr, uint64_t* pml4_t) {
   int result = page_walk(p_addr, (uint64_t)v_addr);
 
   if (result == 0) {
-    kprintf("kmalloc failed!\n");
+    // kprintf("kmalloc failed!\n");
     return 0;
   }
   top_virtual_address += (uint64_t)PAGESIZE;
@@ -821,7 +821,7 @@ uint64_t create_new_user_pml4(uint64_t p_addr, uint64_t* pml4_t) {
   int result = page_walk_user(p_addr, (uint64_t)v_addr);
 
   if (result == 0) {
-    kprintf("kmalloc failed!\n");
+    // kprintf("kmalloc failed!\n");
     return 0;
   }
   top_virtual_address += (uint64_t)PAGESIZE;
@@ -874,7 +874,7 @@ void map_kernel_page(uint64_t v_addr, uint64_t p_addr, pml4 *kernel_pml4) {
 
   // if pdp is present
   if(is_valid_page((uint64_t)offset_in_pml4_t)) {
-    kprintf("pdp valid\n");
+    // kprintf("pdp valid\n");
     uint64_t pdp_table = ((uint64_t)offset_in_pml4_t + KERNBASE);
     uint64_t *offset_in_pdp_t = (uint64_t *)(pdp_table + pdpt_offset);
     

@@ -136,19 +136,19 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   }__attribute__((packed)) *smap;
   int i = 0;
   uint64_t end = 0;
-  kprintf("modulep[0]=%p\n", modulep[0]);
-  kprintf("modulep[1]=%p\n", modulep[1]);
+  // kprintf("modulep[0]=%p\n", modulep[0]);
+  // kprintf("modulep[1]=%p\n", modulep[1]);
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
   for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
       i++;
-      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+      // kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
       end = smap->base + smap->length;
       append_free_list((uint64_t)smap->base, (uint64_t)end, (uint64_t)physfree);
     }
   }
 //  while(1);
-  kprintf("End is %p\n", end);
+  // kprintf("End is %p\n", end);
   
 //  memset((void *) physfree, 0, (end - (uint64_t)physfree)/(uint64_t)8);
   
@@ -157,8 +157,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
 //  while(1);
   
-  kprintf("physfree %p\n", (uint64_t)physfree);
-  kprintf("physbase is : %p\n", (uint64_t)physbase);
+  // kprintf("physfree %p\n", (uint64_t)physfree);
+  // kprintf("physbase is : %p\n", (uint64_t)physbase);
   
   set_free_list_head();
   print_free_list();
@@ -167,8 +167,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   pml4_t = (pml4 *)create_kernel_pml4();
 //  kprintf("PAGE_US = %d \n", PAGE_US);
 //  kprintf("pml4_t[511] = %p\n", pml4_t[511]);
-  kprintf("kernel cr3 = %p\n", kernel_cr3);
-  kprintf("*pml4_t = %p\n", pml4_t);
+  // kprintf("kernel cr3 = %p\n", kernel_cr3);
+  // kprintf("*pml4_t = %p\n", pml4_t);
   
 //  uint64_t *at = (uint64_t *)0x234567;
 //  *at = 10;
@@ -178,8 +178,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   
   
 
-  kprintf("free_list_page_length = %p\n", free_list_page_length);
-  kprintf("(uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (10*PAGESIZE)) = %p\n", (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (9*PAGESIZE)));
+  // kprintf("free_list_page_length = %p\n", free_list_page_length);
+  // kprintf("(uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (10*PAGESIZE)) = %p\n", (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (9*PAGESIZE)));
 
 //  while(1);
 
@@ -220,7 +220,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   set_new_free_list_head();
   
   setNewVideoCardAddresses();
-  kprintf("new cr3 successfully set\n");
+  // kprintf("new cr3 successfully set\n");
 
   init_gdt();
   idt_install();
@@ -383,29 +383,29 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   tarfs_init();
   char *filename = "bin/sbush";
   Elf64_Ehdr *p = get_elf(filename);
-  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+  // kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
   int result = validate_elf_header(p);
-  kprintf("result = %d\n", result);
+  // kprintf("result = %d\n", result);
   result = check_elf_loadable(p);
-  kprintf("elf loadable = %d\n", result);
+  // kprintf("elf loadable = %d\n", result);
   struct mm_struct *head = NULL;
   if(result) {
     head = load_elf_vmas(p);
   }
-  kprintf("mm_struct = %p\n", head->mmap->vm_start);
+  // kprintf("mm_struct = %p\n", head->mmap->vm_start);
   int count = 0;
   struct vm_area_struct *temp = head->mmap;
   while(temp != NULL){
-    kprintf("vm_start = %d\n", temp->vm_type);
+    // kprintf("vm_start = %d\n", temp->vm_type);
     temp = temp->vm_next;
     count++;
   }
-  kprintf("count = %d\n", count);
+  // kprintf("count = %d\n", count);
   // while(1);
 
 
   struct pcb *first_process = create_process(head);
-  kprintf("first process = %p\n", (uint64_t)first_process);
+  // kprintf("first process = %p\n", (uint64_t)first_process);
   // while(1);
   
   struct pcb *dummy_process_1 = create_dummy_process();
@@ -423,9 +423,10 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   schedule_user_process(first_process);
 
-  kprintf("in main\n");
+  // kprintf("in main\n");
   // __asm__ __volatile__ ("int $0x80");
   // while(1);
+  kprintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   __asm__ __volatile__ ("sti");
   
 

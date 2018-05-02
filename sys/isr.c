@@ -163,7 +163,7 @@ void syscall_handler(registers *r)
     // __asm__ volatile("sti");
     // while (keyboard_flag != 1);
     char *s = getstring((char *)r->rdi);
-    kprintf("got string = %s\n", s);
+    // kprintf("got string = %s\n", s);
     __asm__ volatile("movq %%rax, %0;" : "=m" (s));
   } 
   else if (syscall_no == 3) {
@@ -172,6 +172,11 @@ void syscall_handler(registers *r)
     if (strcmp((char *)r->rdi, "ls") == 0) {
       exec_new_binary("bin/ls");
     }
+  }
+  else if (syscall_no == 5) {
+    kprintf("/rootfs/bin/sbush");
+    char path[100] = "/rootfs/bin/sbush";
+    __asm__ volatile("movq %%rax, %0;" : "=m" (path));
   }
 
   outb(0x20, 0x20);  
