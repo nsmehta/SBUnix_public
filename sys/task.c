@@ -208,31 +208,51 @@ void first_user_process(pml4 *kernel_pml4_t){
 
 struct pcb *create_process(struct mm_struct *head) {
   
-  struct pcb* new_process = (struct pcb *)kmalloc(sizeof(pcb));
+  kprintf("in create_process\n");
+  struct pcb* new_process = (struct pcb *)kmalloc_user(sizeof(pcb));
   
   memset((void *)new_process, 0, (uint64_t)sizeof(pcb) / (uint64_t)8);
   
-//  uint64_t process_cr3 = get_next_free_page_kmalloc();
-//  
-//  create_new_user_pml4(process_cr3, kernel_pml4_t);
-//  
-//  uint64_t old_cr3 = get_cr3();
+  uint64_t process_cr3 = get_next_free_page_kmalloc();
   
-//  new_process->e_entry = head->e_entry;
+  create_new_user_pml4(process_cr3, kernel_pml4_t);
   
-//  struct vm_area_struct *temp = head->mmap;
-  /*while(temp != NULL){
+  uint64_t old_cr3 = get_cr3();
+
+  new_process->cr3 = process_cr3;
+  
+  new_process->e_entry = head->e_entry;
+
+  kprintf("new_process->e_entry = %p\n", new_process->e_entry);
+  
+  struct vm_area_struct *temp = head->mmap;
+  while(temp != NULL){
     if (temp->vm_type == TYPE_FILE) {
+      // kprintf("process_cr3 = %p\n", process_cr3);
+      // uint64_t padd = get_next_free_page_kmalloc();
+      // kprintf("get next free page kmalloc = %p\n", padd);
+
       set_cr3((uint64_t *)process_cr3);
       
-      uint64_t vm_start = temp->vm_start;
-      uint64_t vm_size = temp->vm_end - vm_start;
+      uint64_t vm_start = page_align(temp->vm_start);
+      uint64_t vm_size = round_up(temp->vm_end - vm_start);
       
-      kmalloc_top_virtual_address_user(vm_size, vm_start);
+      // kprintf("before kmalloc_top_virtual_address_user: %p, %p\n", vm_start, vm_size);
+      uint64_t v_addr = kmalloc_top_virtual_address_user(vm_size, vm_start);
+      // uint64_t v_addr = kmalloc_user(vm_size);
+      // kprintf("after kmalloc_top_virtual_address_user: %p\n", v_addr);
+      // kprintf("v_addr[0] = %p\n",((uint64_t *)v_addr)[0]);
+      // while(1);
       
       //Copy values from p_offset to the virtual address vm_start in the current paging structure
-      uint8_t *address = (uint8_t *)vm_start;
-      uint8_t *offset = (uint8_t *)head->elf_head + temp->vm_offset;
+      uint8_t *address = (uint8_t *)v_addr;
+      uint8_t *offset = (uint8_t *)(head->elf_head + temp->vm_offset);
+
+      kprintf("offset = %p\n", offset);
+      kprintf("head->elf_head = %p\n", head->elf_head);
+      kprintf("temp->vm_offset = %p\n", temp->vm_offset);
+      kprintf("vm_size = %p\n", vm_size);
+      // while(1);
       
       //Copy values from p_offset to the virtual address vm_start in the current paging structure
       for(uint64_t i = 0; i< vm_size; i++) {
@@ -240,14 +260,40 @@ struct pcb *create_process(struct mm_struct *head) {
         address++;
         offset++;
       }
-      
+      kprintf("*address = %p\n", address);
+      address = (uint8_t *)v_addr;
+
+      kprintf("*address = %p\n", address);
+      address++;
+      kprintf("*address = %p\n", *address);
+      address++;
+      kprintf("*address = %p\n", *address);
+      // while(1);
+
+
+
+      set_cr3((uint64_t *)old_cr3);
+    } else if (temp->vm_type == TYPE_STACK) {
+      set_cr3((uint64_t *)process_cr3);
+      kprintf("paging_user_stack_top = %p\n", paging_user_stack_top);
+      uint64_t stack_top = paging_user_stack_top;
+      // paging_user_stack_top -= (PAGESIZE * 3);
+      uint64_t *new_stack = (uint64_t *)kmalloc_top_virtual_address_user(PAGESIZE, stack_top - PAGESIZE + 8);
+      kprintf("new_stack = %p\n", new_stack);
+      kprintf("paging_user_stack_top = %p\n", paging_user_stack_top);
+      new_process->pstack = (uint64_t *)(stack_top - 64);
+      kprintf("new_process->pstack = %p, [-100] = %p\n", new_process->pstack, &(((uint64_t *)new_process->pstack)[-100]));
+      temp->vm_start = (uint64_t)new_process->pstack;
+      temp->vm_end = (uint64_t)(new_process->pstack + (512*3 - 1));
+      kprintf("*new_process->pstack = %p\n", ((uint64_t *)new_process->pstack)[-100]);
       set_cr3((uint64_t *)old_cr3);
     }
     kprintf("vm_start = %d\n", temp->vm_type);
     temp = temp->vm_next;
 //    count++;
-  }*/
+  }
 
+  // kprintf("new process returned\n");
 //  uint64_t *new_stack = kmalloc(PAGESIZE);
   return new_process;
   
@@ -259,7 +305,7 @@ pcb *create_dummy_process() {
   kprintf("in dummy process\n");
   pcb* new_process = (pcb *)kmalloc_user(sizeof(pcb));
   
-  memset((void *)new_process, 0, (uint64_t)sizeof(pcb) / (uint64_t)8);
+  memset((void *)((uint64_t)new_process), 0, (uint64_t)sizeof(pcb) / (uint64_t)8);
   
   new_process->pstack = NULL;
   new_process->pid = (uint64_t) NULL;
@@ -270,6 +316,7 @@ pcb *create_dummy_process() {
   new_process->exit_status = 0;
   new_process->next = NULL;
   new_process->e_entry = (uint64_t) NULL;
+  new_process->time_remaining = (uint64_t) 0x3;
   
   return new_process;
 }
@@ -294,7 +341,6 @@ void first_process_switch(pcb *process, uint64_t rip, uint64_t flags) {
   
   // map physical cr3 to virtual cr3
   create_new_user_pml4(process->cr3, kernel_pml4_t);
-  
   
   
   // load the new process's cr3

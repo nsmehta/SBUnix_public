@@ -18,6 +18,11 @@
 .global irq45
 .global irq46
 .global irq47
+.global irq128
+
+.global irq_common_stub
+.extern syscall_handler
+
 
 # 32: Stack Fault Exception
 irq32:
@@ -131,6 +136,52 @@ irq47:
   pushq $47 		# irq number
   jmp irq_common_stub
 
+irq128:
+  cli
+  pushq $0
+  pushq $128
+  # jmp irq_common_stub
+
+    pushq %rdi
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rbp
+    pushq %rsi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+    movq %rsp, %rdi
+    callq syscall_handler
+
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rsi
+    popq %rbp
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+    popq %rdi
+
+    add $16, %rsp
+    sti
+    iretq
+
+
 
 .extern irq_handler
 # IRQ common stub. It saves processor state, sets up for kernel mode segments
@@ -138,14 +189,30 @@ irq47:
 
 irq_common_stub:
   # pusha
-  pushq %rax
-  pushq %rcx
-  pushq %rdx
-  pushq %rbx
-  pushq %rsp
-  pushq %rbp
+  # pushq %rax
+  # pushq %rcx
+  # pushq %rdx
+  # pushq %rbx
+  # pushq %rsp
+  # pushq %rbp
+  # pushq %rsi
+  # pushq %rdi
   pushq %rsi
   pushq %rdi
+  pushq %rbp
+  pushq %rax
+  pushq %rbx
+  pushq %rcx
+  pushq %rdx
+  pushq %r8
+  pushq %r9
+  pushq %r10
+  pushq %r11
+  pushq %r12
+  pushq %r13
+  pushq %r14
+  pushq %r15
+
 
   movq %ds, %rax
   pushq %rax
@@ -165,16 +232,32 @@ irq_common_stub:
   movq %rbx, %gs
 
   # popa
-  popq %rdi
-  popq %rsi
-  popq %rbp
-  popq %rsp
-  popq %rbx
+  # popq %rdi
+  # popq %rsi
+  # popq %rbp
+  # popq %rsp
+  # popq %rbx
+  # popq %rdx
+  # popq %rcx
+  # popq %rax
+  popq %r15
+  popq %r14
+  popq %r13
+  popq %r12
+  popq %r11
+  popq %r10
+  popq %r9
+  popq %r8
   popq %rdx
   popq %rcx
+  popq %rbx
   popq %rax
+  popq %rbp
+  popq %rdi
+  popq %rsi
 
 
-  add $0x08, %rsp
+
+  add $0x10, %rsp
   sti
   iretq

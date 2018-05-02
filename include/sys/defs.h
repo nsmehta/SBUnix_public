@@ -4,6 +4,8 @@
 #define NULL ((void*)0)
 #define KERNBASE 0xffffffff80000000
 
+#define PRINT 1
+
 typedef unsigned long  uint64_t;
 typedef          long   int64_t;
 typedef unsigned int   uint32_t;

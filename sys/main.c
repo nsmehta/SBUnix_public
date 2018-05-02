@@ -26,14 +26,45 @@ int count = 0;
 pml4 *virtual_pml4_t;
 
 void user_mode_function_1() {
-  
-  kprintf("in user function\n");
-
+  kprintf("in user function 1\n");
   while(1) {
-    kprintf("in user mode\n");
+    for(uint64_t i = 0; i < 20000; i++) {
+     for (uint64_t j = 0; j < 1000; j++) {
+      // kprintf("in user function 1\n");
+     }
+    }
+    kprintf("in user function 1\n");
+    
+  }  
+  
+}
+
+void user_mode_function_2() {
+  kprintf("in user function 2\n");
+  while(1) {
+    for(uint64_t i = 0; i < 20000; i++) {
+     for (uint64_t j = 0; j < 1000; j++) {
+      // kprintf("in user function 2\n");
+     }
+    }
+    
   }
   
 }
+
+void user_mode_function_3() {
+  kprintf("in user function 3\n");
+  while(1) {
+    for(uint64_t i = 0; i < 20000; i++) {
+     for (uint64_t j = 0; j < 1000; j++) {
+      // kprintf("in user function 3\n");
+     }
+    }
+    
+  }
+  
+}
+
 
 
 void kthread(){
@@ -202,7 +233,9 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   
   //  set top virtual address
-  set_top_virtual_address((uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE) + (200*PAGESIZE));  
+  set_top_virtual_address((uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE) + (200*PAGESIZE));
+  // while(1);
+  // set_top_virtual_address((uint64_t)0x400000);
   
 //  kprintf("(uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (1000*PAGESIZE)) = %p\n", (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (1000*PAGESIZE)));
 
@@ -211,25 +244,79 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  Page *pg = NULL;
 //  kprintf("null = %p\n", pg);
 //  while(1);
-//  uint64_t new_address = kmalloc(PAGESIZE * 23000);
-//  if (new_address == 0) {
-//    while(1);
-//  }
-//  kprintf("new_address = %p\n", new_address);
+  // __asm__ __volatile__ ("sti");
 
-//  new_address = kmalloc(PAGESIZE * 454);
-//  if (new_address == 0) {
-//    while(1);
-//  }
-//  kprintf("new_address = %p\n", new_address);
+  // for(uint64_t index = 0; index < 10000; index++) {
+
+  //   uint64_t page = get_next_free_page_kmalloc();
+  //   kprintf("%p, page = %p\n", index, page);
+
+  // }
+ // uint64_t new_address = kmalloc(PAGESIZE * 1);
+ // if (new_address == 0) {
+ //   while(1);
+ // }
+ // kprintf("new_address = %p\n", new_address);
+
+ //  for (uint64_t index = 0; index < 10000; index++) {    
+ //   new_address = kmalloc(PAGESIZE * 1);
+ //   if (new_address == 0) {
+ //    kprintf("failed!\n");
+ //     while(1);
+ //   }
+ //   kprintf("%d) new_address = %p\n", index, new_address);
+ //   // kprintf("*new_address = %p\n", ((uint64_t *)new_address)[0]);
+ //  }
 //
-//  new_address = kmalloc(PAGESIZE * 1);
-//  if (new_address == 0) {
-//    while(1);
-//  }
-//  kprintf("new_address = %p\n", new_address);
+ // new_address = kmalloc(PAGESIZE * 10);
+ // if (new_address == 0) {
+ //   while(1);
+ // }
+ // kprintf("new_address = %p\n", new_address);
+ 
+
+
+  // uint64_t process_cr3 = get_next_free_page_kmalloc();
+  // kprintf("process_cr3 = %p\n", process_cr3);
   
-  kprintf("mapping done!\n");
+  // create_new_user_pml4(process_cr3, kernel_pml4_t);
+
+  // kprintf("process_cr3 = %p\n", process_cr3);
+  
+  // uint64_t old_cr3 = get_cr3();
+
+  // kprintf("old_cr3 = %p\n", old_cr3);
+
+  // set_cr3((uint64_t *)process_cr3);
+
+  // kprintf("set new cr3: %p\n", get_cr3());
+  // uint64_t new_page = kmalloc(PAGESIZE);
+  // kprintf("new_page = %p\n", new_page);
+  // kprintf("new_page[0] = %p\n", ((uint64_t *)new_page)[0]);
+  // while(1);  
+  // 0x400000
+  // 0xffffffff80400000
+
+  // kprintf("before kmalloc_top_virtual_address_user: %p, %p\n", 0x400000, PAGESIZE);
+  // uint64_t v_addr = kmalloc_top_virtual_address_user(PAGESIZE, 0x400000);
+  // kprintf("after kmalloc_top_virtual_address_user: %p\n", v_addr);
+  // kprintf("v_addr[0] = %p\n",((uint64_t *)v_addr)[0]);
+
+
+ // while(1); 
+  // kprintf("mapping done!\n");
+  // while(1);
+
+  // uint64_t new_v_addr = kmalloc_top_virtual_address_user(PAGESIZE, (uint64_t)0x500000);
+  // kprintf("new_v_addr = %p, size = %p\n", new_v_addr, PAGESIZE);
+  // kprintf("new_v_addr[0] = %p\n", ((uint64_t *)new_v_addr)[0]);
+  // kprintf("kernel cr3 = %p\n", kernel_cr3);
+
+  // new_v_addr = kmalloc_top_virtual_address_user(PAGESIZE, (uint64_t)0x400000);
+  // kprintf("new_v_addr = %p\n", new_v_addr);
+  // kprintf("new_v_addr[0] = %p\n", ((uint64_t *)new_v_addr)[0]);
+  // kprintf("kernel cr3 = %p\n", kernel_cr3);
+  // while(1);
 
   
 //  map_kernel_pages( (uint64_t)KERNBASE + (uint64_t)physbase, (uint64_t)KERNBASE + (uint64_t)physfree + (free_list_page_length * PAGESIZE + (10*PAGESIZE)), (uint64_t)physbase, pml4_t );
@@ -293,62 +380,50 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 //  switch_to_user_mode(up);
   
   
-//  char *filename = "bin/sbush";
-//  Elf64_Ehdr *p = get_elf(filename);
-//  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
-//  int result = validate_elf_header(p);
-//  kprintf("result = %d\n", result);
-//  result = check_elf_loadable(p);
-//  kprintf("elf loadable = %d\n", result);
-//  struct mm_struct *head = NULL;
-//  if(result) {
-//    head = load_elf_vmas(p);
-//  }
-//  kprintf("mm_struct = %p\n", head->mmap->vm_start);
-//  int count = 0;
-//  struct vm_area_struct *temp = head->mmap;
-//  while(temp != NULL){
-//    kprintf("vm_start = %d\n", temp->vm_type);
-//    temp = temp->vm_next;
-//    count++;
-//  }
-//  kprintf("count = %d\n", count);
-//
-//
-//  struct pcb *first_process = create_process(head);
-//  kprintf("first process = %p\n", (uint64_t)first_process);
+  char *filename = "bin/sbush";
+  Elf64_Ehdr *p = get_elf(filename);
+  kprintf("\nreturned to main %x%c\n", p->e_ident[0], p->e_ident[1]);
+  int result = validate_elf_header(p);
+  kprintf("result = %d\n", result);
+  result = check_elf_loadable(p);
+  kprintf("elf loadable = %d\n", result);
+  struct mm_struct *head = NULL;
+  if(result) {
+    head = load_elf_vmas(p);
+  }
+  kprintf("mm_struct = %p\n", head->mmap->vm_start);
+  int count = 0;
+  struct vm_area_struct *temp = head->mmap;
+  while(temp != NULL){
+    kprintf("vm_start = %d\n", temp->vm_type);
+    temp = temp->vm_next;
+    count++;
+  }
+  kprintf("count = %d\n", count);
+
+
+  struct pcb *first_process = create_process(head);
+  kprintf("first process = %p\n", (uint64_t)first_process);
+  // while(1);
   
-/*  uint64_t flags = 0x0;
+  struct pcb *dummy_process_1 = create_dummy_process();
+
+  // struct pcb *dummy_process_2 = (struct pcb *)create_dummy_process();
+
+  // struct pcb *dummy_process_3 = (struct pcb *)create_dummy_process();
   
-  __asm__ volatile(
-  "\
-    pushfq;\
-    popq  %0;\
-  "
-  :"=r" (flags)
-  :
-  );
-  
-  first_process_switch(first_process, (uint64_t) &user_mode_function_1, 0x200202);
-  __asm__ __volatile__ ("sti");
-*/
-  
-//  for(uint64_t i = 0; i < 100000; i++) {
-//    for(uint64_t j = 0; j < 10000; j++) {
-//      
-//    }
-//  }
-  
-//  user_mode_function_1();
-  
-  struct pcb *dummy_process = (struct pcb *)create_dummy_process();
-//  
   scheduler_init();
-  schedule_idle_process(dummy_process, (uint64_t) &user_mode_function_1);
-  
-  
+  schedule_idle_process(dummy_process_1, (uint64_t) &user_mode_function_1);
+
+  // schedule_ready_process(dummy_process_2, (uint64_t) &user_mode_function_2);
+
+  // schedule_ready_process(dummy_process_3, (uint64_t) &user_mode_function_3);
+
+  schedule_user_process(first_process);
 
   kprintf("in main\n");
+  // __asm__ __volatile__ ("int $0x80");
+  // while(1);
   __asm__ __volatile__ ("sti");
   
 

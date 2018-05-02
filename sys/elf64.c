@@ -5,6 +5,7 @@
 #include <sys/defs.h>
 #include <sys/mm.h>
 #include <sys/paging.h>
+#include <sys/schedule.h>
 
 // check if the ELF magic number exists at the start of the header
 int validate_elf_header(Elf64_Ehdr *ehdr) {
@@ -62,7 +63,7 @@ int check_elf_loadable_from_fp(struct file *fp) {
 
 // returns the mm_struct for an ELF file pointer
 struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
-  struct mm_struct *mm_head = (struct mm_struct *)kmalloc(sizeof(struct mm_struct));
+  struct mm_struct *mm_head = (struct mm_struct *)kmalloc_user(sizeof(struct mm_struct));
   int i = 0;
   struct vm_area_struct *vma_head = NULL;
   struct vm_area_struct *vma_next = NULL;
@@ -72,21 +73,23 @@ struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
     Elf64_Phdr *phdr = ((Elf64_Phdr *)(((uint64_t)ehdr) + ehdr->e_phoff)) + i;
     if(phdr->p_type == PT_LOAD) {
       if(vma_head == NULL) {
-	vma_head = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+	vma_head = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
 	vma_head->vm_start = phdr->p_vaddr;
 	vma_head->vm_end = (phdr->p_vaddr + phdr->p_memsz);
 	vma_head->vm_type = TYPE_FILE;
+  vma_head->vm_offset = phdr->p_offset;
 	//vma_head->vm_next = vma_next;
 	vma_head->vm_next = NULL;
 	vma_next = vma_head;
 	kprintf("p_offset = %p\n", phdr->p_offset);
       }
       else {
-	vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+	vma_next->vm_next = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
 	vma_next = vma_next->vm_next;
 	vma_next->vm_start = phdr->p_vaddr;
 	vma_next->vm_end = (phdr->p_vaddr + phdr->p_memsz);
-	vma_head->vm_type = TYPE_FILE;
+	vma_next->vm_type = TYPE_FILE;
+  vma_next->vm_offset = phdr->p_offset;
 	vma_next->vm_next = NULL;
 	//vma_next = vma_next->vm_next;
       }
@@ -94,8 +97,9 @@ struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
     
   }
 
+  // assign stack and heap
   if(vma_head == NULL) {
-    vma_head = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_head = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
     vma_head->vm_start = (uint64_t)NULL;
     vma_head->vm_end = (uint64_t)NULL;
     vma_head->vm_type = TYPE_STACK;
@@ -103,34 +107,36 @@ struct mm_struct *load_elf_vmas(Elf64_Ehdr *ehdr) {
     vma_head->vm_next = NULL;
     vma_next = vma_head;
     
-    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
     vma_next = vma_next->vm_next;
     vma_next->vm_start = (uint64_t)NULL;
     vma_next->vm_end = (uint64_t)NULL;
-    vma_head->vm_type = TYPE_HEAP;
+    vma_next->vm_type = TYPE_HEAP;
     vma_next->vm_next = NULL;
     //vma_next = vma_next->vm_next;
     
   }
   else {
-    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
     vma_next = vma_next->vm_next;
     kprintf("vma_head = %p, vma_head->vm_next = %p, vma_next = %p\n", vma_head, vma_head->vm_next, vma_next);
     vma_next->vm_start = (uint64_t)NULL;
     vma_next->vm_end = (uint64_t)NULL;
-    vma_head->vm_type = TYPE_STACK;
+    vma_next->vm_type = TYPE_STACK;
     vma_next->vm_next = NULL;
     //vma_next = vma_next->vm_next;
 
-    vma_next->vm_next = (struct vm_area_struct *)kmalloc(sizeof(struct vm_area_struct));
+    vma_next->vm_next = (struct vm_area_struct *)kmalloc_user(sizeof(struct vm_area_struct));
     vma_next = vma_next->vm_next;
     vma_next->vm_start = (uint64_t)NULL;
     vma_next->vm_end = (uint64_t)NULL;
-    vma_head->vm_type = TYPE_HEAP;
+    vma_next->vm_type = TYPE_HEAP;
     vma_next->vm_next = NULL;
     //vma_next = vma_next->vm_next;    
   }
   
+  mm_head->e_entry = ehdr->e_entry;
+  mm_head->elf_head = (uint64_t *)ehdr;
   mm_head->mmap = vma_head;
   //mm_head->start_stack = kmalloc(PAGESIZE * 2);
   //mm_head->start_brk = kmalloc(PAGESIZE * 2);

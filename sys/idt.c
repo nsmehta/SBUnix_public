@@ -121,5 +121,7 @@ void init_idt() {
   idt_set_gate(45, (uint64_t)irq13, 0x08, 0, 0x8e, 0, 1);
   idt_set_gate(46, (uint64_t)irq14, 0x08, 0, 0x8e, 0, 1);
   idt_set_gate(47, (uint64_t)irq15, 0x08, 0, 0x8e, 0, 1);
+  // user mode syscall
+  idt_set_gate(128, (uint64_t)irq128, 0x08, 0, 0xee, 0, 1);
 
 }

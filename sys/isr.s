@@ -53,7 +53,10 @@
 	.global irq13
 	.global irq14
 	.global irq15
+	#.global irq128
 
+	.extern syscall_handler
+	.extern irq_common_stub
 
 
 	# 0: Divide by Zero Exception
@@ -445,6 +448,8 @@ isr31:
 
 
 
+
+
 	# ISR common stub: saves the processor state, sets up kernel mode segments
 	# calls C-level fault handler and restores the stack frame
 
@@ -505,16 +510,32 @@ isr_common_stub:
 # IRQ common stub. It saves processor state, sets up for kernel mode segments
 # calls the C-level fault handler, and finally restores the stack frame.
 
-irq_common_stub:
+irq_common_stub_1:
   # pusha
-  pushq %rax
-  pushq %rcx
-  pushq %rdx
-  pushq %rbx
-  pushq %rsp
-  pushq %rbp
-  pushq %rsi
-  pushq %rdi
+  # pushq %rax
+  # pushq %rcx
+  # pushq %rdx
+  # pushq %rbx
+  # pushq %rsp
+  # pushq %rbp
+  # pushq %rsi
+  # pushq %rdi
+	pushq %rdi
+	pushq %rbp
+	pushq %rax
+	pushq %rbx
+	pushq %rcx
+	pushq %rdx
+  	pushq %rsi
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
 
   movq %ds, %rax
   pushq %rax
@@ -535,14 +556,29 @@ irq_common_stub:
   movq %rbx, %gs
 
   # popa
-  popq %rdi
-  popq %rsi
-  popq %rbp
-  popq %rsp
-  popq %rbx
-  popq %rdx
-  popq %rcx
-  popq %rax
+  # popq %rdi
+  # popq %rsi
+  # popq %rbp
+  # popq %rsp
+  # popq %rbx
+  # popq %rdx
+  # popq %rcx
+  # popq %rax
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rsi
+	popq %rdx
+	popq %rcx
+	popq %rbx
+	popq %rax
+	popq %rbp
+	popq %rdi
 
 
   add $0x10, %rsp

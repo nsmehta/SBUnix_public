@@ -18,22 +18,36 @@
 #define PAGE_ACCESSED 1 << 5
 #define PAGE_DIRTY    1 << 6
 
-#define PAGE_KERNEL (PAGE_PRESENT | PAGE_RW)
+#define PAGE_KERNEL (PAGE_PRESENT | PAGE_RW | PAGE_US)
 #define PAGE_USER (PAGE_PRESENT | PAGE_RW | PAGE_US)
 
-#define PML4_PT_WALK  0xfffffffffffff000UL
-#define PDPE_PT_WALK  0xffffffffffe00000UL
-#define PGD_PT_WALK   0xffffffffc0000000UL
-#define PTE_PT_WALK   0xffffff8000000000UL
+
+
+// #define PML4_PT_WALK  0xfffffffffffff000UL
+// #define PDPE_PT_WALK  0xffffffffffe00000UL
+// #define PGD_PT_WALK   0xffffffffc0000000UL
+// #define PTE_PT_WALK   0xffffff8000000000UL
+
+#define PML4_PT_WALK  0xffffff7fbfdfe000UL
+#define PDPE_PT_WALK  0xffffff7fbfc00000UL
+#define PGD_PT_WALK   0xffffff7f80000000UL
+#define PTE_PT_WALK   0xffffff0000000000UL
+
+// #define PML4_OFFSET   0x0000ff8000000000UL
+// #define PDPE_OFFSET   0x0000ffffc0000000UL
+// #define PGD_OFFSET    0x0000ffffffe00000UL
+// #define PTE_OFFSET    0x0000fffffffff000UL
 
 #define PML4_OFFSET   0x0000ff8000000000UL
 #define PDPE_OFFSET   0x0000ffffc0000000UL
 #define PGD_OFFSET    0x0000ffffffe00000UL
 #define PTE_OFFSET    0x0000fffffffff000UL
 
+
 uint64_t kernel_cr3;
 uint64_t top_virtual_address;
 uint64_t *kernel_pml4_t;
+uint64_t paging_user_stack_top;
 
 typedef struct Page{
   struct Page *next;
